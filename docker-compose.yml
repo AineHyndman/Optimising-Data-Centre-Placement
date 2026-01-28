@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app  # Syncs code changes instantly (Hot Reload)
+    environment:
+      - WATCHFILES_FORCE_POLLING=true # Often needed for hot reload in Docker
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Prevents host node_modules from overriding container's
+    depends_on:
+      - backend
+
