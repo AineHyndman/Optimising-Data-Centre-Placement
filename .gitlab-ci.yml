@@ -33,17 +33,14 @@ run_frontend_lint:
     - cd frontend 
     - npm install
     - npm run lint
-  allow_failure: false 
 
 run_backend_lint:
   stage: lint
   image: python:3.11-slim
   script:
     - cd backend 
-    - python -m pip install --upgrade pip
     - python -m pip install --no-cache-dir -r requirements.txt
     - python test_app.py
-  allow_failure: false
 
 #sast:
 #  stage: test
