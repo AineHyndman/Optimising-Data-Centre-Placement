@@ -40,7 +40,8 @@ run_backend_lint:
   image: python:3.11-slim
   script:
     - cd backend 
-    - pip install --no-cache-dir -r requirements.txt
+    - python -m pip install --upgrade pip
+    - python -m pip install --no-cache-dir -r requirements.txt
     - python test_app.py
   allow_failure: false
 
