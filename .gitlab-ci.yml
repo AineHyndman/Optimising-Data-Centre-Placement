@@ -11,6 +11,7 @@
 
 stages:
 - lint
+- quality
 - build
 - test
 #- deploy
@@ -45,6 +46,20 @@ run_backend_lint:
     - cd backend 
     - python -m pip install --no-cache-dir -r requirements.txt
     - python test_app.py
+
+
+code_quality:
+  stage: quality
+  tags:
+    - docker
+  image: python:3.11-slim
+  before_script:
+    - python -m pip install --no-cache-dir black isort
+  script:
+    - cd backend
+    - isort --check-only .
+    - black --check .
+  allow_failure: true
 
 #sast:
 #  stage: test
