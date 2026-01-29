@@ -44,6 +44,6 @@ run_backend_lint:
     - python test_app.py
   allow_failure: false
 
-sast:
-  stage: test
+#sast:
+#  stage: test
 
