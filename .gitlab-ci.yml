@@ -36,6 +36,8 @@ run_frontend_lint:
 
 run_backend_lint:
   stage: lint
+  tags:
+    - docker
   image: python:3.11-slim
   script:
     - cd backend 
