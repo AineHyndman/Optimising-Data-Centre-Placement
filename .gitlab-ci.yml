@@ -28,6 +28,8 @@ stages:
 
 run_frontend_lint:
   stage: lint
+  tags:
+    - docker
   image: node:20-alpine
   script:
     - cd frontend 
