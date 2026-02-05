@@ -1,4 +1,11 @@
-import csv
+import json
+
+# Opens "racks.json" as a readable file
+with open("racks.json", 'r') as rackfile:
+
+    # Loads values from the file into rack_list
+    rack_list = json.load(rackfile)
+    racks = {r["Code"]: r for r in rack_list}
 
 # Class for the racks
 class rack:
@@ -12,20 +19,14 @@ class rack:
         self.powerNeed = None
         self.capacity = None
 
-        # Opens "racks.csv" as a readable file
-        with open("racks.csv", 'r', newline = "") as rackfile:
+        rack = racks.get(code)
+        if rack is None:
+            raise ValueError("Not valid code")
 
-            # rackReader interprets the file as a dictionary with the headers as the keys
-            rackReader = csv.DictReader(rackfile)
-
-            # Reads the rows until the correct code is found
-            for row in rackReader:
-                if row["Code"] == self.code:
-                    # Set the variable values to the correct ones
-                    self.type = row["Type"]
-                    self.generation = int(row["Generation"])
-                    self.powerNeed = int(row["Power Need (kW)"])
-                    self.capacity = float(row["Capacity Output (RSU)"])
+        self.type = rack["Type"]
+        self.generation = int(rack["Generation"])
+        self.powerNeed = int(rack["Power Need (kW)"])
+        self.capacity = float(rack["Capacity Output (RSU)"])
         
         # If any of the variables apart from "code" are none, it raises an error
         if self.type is None or self.generation is None or self.powerNeed is None or self.capacity is None:
