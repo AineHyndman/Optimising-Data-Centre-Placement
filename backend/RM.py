@@ -5,6 +5,8 @@ with open("racks.json", 'r') as rackfile:
 
     # Loads values from the file into rack_list
     rack_list = json.load(rackfile)
+
+    # Build a dictionary with Codes for keys
     racks = {r["Code"]: r for r in rack_list}
 
 # Class for the racks
@@ -19,10 +21,12 @@ class rack:
         self.powerNeed = None
         self.capacity = None
 
+        # Get the correct rack row
         rack = racks.get(code)
         if rack is None:
             raise ValueError("Not valid code")
 
+        # Change the variables to their correct values
         self.type = rack["Type"]
         self.generation = int(rack["Generation"])
         self.powerNeed = int(rack["Power Need (kW)"])
