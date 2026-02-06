@@ -68,6 +68,32 @@ Key files that define the application shape:
 
 The README covers exact command sequences.
 
+## Architecture Rationale
+This architecture is intentionally simple and decoupled to optimize early-stage iteration while keeping a clear path to scale:
+
+- **Separation of concerns:** React UI and FastAPI API are isolated services, making it easier to evolve each layer independently.
+- **Fast iteration loop:** Docker Compose plus hot reload keeps onboarding and day-to-day development consistent and quick.
+- **Clear integration surface:** The HTTP API boundary is explicit, which simplifies testing and future service expansion.
+- **Lightweight defaults:** Minimal dependencies and no persistence layer reduce complexity until requirements solidify.
+- **Scalable foundation:** Containerized services and standard ports provide a straightforward base for adding databases, queues, or additional services later.
+
+## Comparison With Other Common Stacks
+Below are alternative approaches and the main drawbacks compared to the current React + FastAPI split:
+
+1. **Next.js (React) + Node.js API (Express/NestJS)**
+   - **Pros:** Single-language TypeScript across frontend and backend; rich React ecosystem.
+   - **Drawbacks:** Heavier runtime footprint for the API layer, and greater complexity when you only need a small, fast JSON API. Node server tuning and build pipelines can add operational overhead for a project at this stage.
+
+2. **Django + Django Templates (monolith)**
+   - **Pros:** Batteries-included framework with admin and ORM.
+   - **Drawbacks:** Tighter coupling between UI and backend slows independent iteration of the frontend. React integration often becomes a hybrid setup with duplicated build steps, which increases complexity.
+
+3. **Go (Gin/Fiber) + Vue/Svelte**
+   - **Pros:** High-performance backend and lightweight frontend options.
+   - **Drawbacks:** Adds a second ecosystem to maintain (Go + JS), and Go’s strong typing and build tooling can slow experimentation compared to Python for early-stage modeling and prototyping.
+
+Overall, the selected stack keeps the API layer lightweight and the UI modern, while avoiding early over-commitment to heavyweight frameworks or monolithic coupling.
+
 ## Architecture Constraints and Notes
 - The repository currently favors a simple, two-service layout.
 - Environment configuration is minimal and defined in `docker-compose.yml`.
