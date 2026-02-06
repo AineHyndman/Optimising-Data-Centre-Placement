@@ -43,13 +43,14 @@ The primary stakeholders are the Meta industry mentors (Eoin O'Kane, John Kelly,
 
 ## Functional Requirements
 
-### JSON Cluster Plan Parser
+### P0 — Must Have
+#### JSON Cluster Plan Parser
 - Ingests `cluster-plan-*.json` files matching the provided schema (`constraints`, `rack_types`, `cluster_plans`).
 - Parses rack type definitions (code, generation, power kW, RSU output) and populates the domain model.
 - Handles all provided variants: single-generation, mixed-generation, and overpower plans.
 - Validates input structure and reports parsing errors.
 
-### Domain Model (Grid State)
+#### Domain Model (Grid State)
 - Represents the full topology: Datacenter (tcd1–tcd4) → Suite (A–D) → Row (1–48) → Position (1–16) → Rack.
 - Each rack stores: type code, generation, power draw (kW), RSU output, service type (compute/storage/AI).
 - Each row tracks: aggregate power, 85% headroom target, rack count.
@@ -57,13 +58,13 @@ The primary stakeholders are the Meta industry mentors (Eoin O'Kane, John Kelly,
 - Each datacenter tracks: total power (≤50 MW).
 - GridState provides a snapshot of all positions and computed aggregates (total power, compute/storage/AI RSU).
 
-### Constraint Validator
+#### Constraint Validator
 - **Power constraints**: Suite ≤ 12.5 MW (hard), building ≤ 50 MW (hard), emergency buffer 0.5 MW (soft, max 1 week).
 - **RSU constraints**: Compute ≥ 388, Storage ≥ 166, AI ≥ 145 (hard minimums — violation = service outage). Compute ≤ 500, Storage ≤ 200, AI ≤ 250 (soft maximums — temporary exceedance permitted under emergency rules).
 - **Operational constraints**: ≤ 32 rack movements per day; cannot move a rack into an occupied position; 4 rows must remain empty at all times; removed 2023 racks are permanently disposed.
 - Validates every intermediate state (each day) during schedule simulation. Rejects any plan that violates hard constraints at any point.
 
-### Heuristic/Linear Planner
+#### Heuristic/Linear Planner
 - Accepts the current GridState and target goal configuration.
 - **Headroom mode**: Maximise available power capacity by optimising rack replacement order and placement to free the most power headroom as early as possible.
 - **Green mode**: Minimise total power consumption while maintaining the same or better compute/storage/AI RSU output.
@@ -71,30 +72,32 @@ The primary stakeholders are the Meta industry mentors (Eoin O'Kane, John Kelly,
 - Outputs an ordered sequence of daily move operations.
 - Respects all constraint validator rules during plan generation.
 
-### Day-by-Day Simulator
+#### Day-by-Day Simulator
 - Executes the planner's output step-by-step (day by day).
 - Updates GridState after each day's moves.
 - Calls constraint validator on each intermediate state.
 - Records: positions updated, racks removed, racks placed, power/RSU snapshot per day.
 - Feeds updated positions back to GridState.
 
-### Schedule & Output Generator
+#### Schedule & Output Generator
 - Produces a weekly schedule grouping daily moves.
 - Outputs per-day move lists: source position, rack removed, destination position, rack placed.
 - Generates summary reports: total power usage, RSU by type, generation distribution, power per row.
 - Supports datacenter/suite-level views.
 
-### User Interface (CLI and/or Web)
+#### User Interface (CLI and/or Web)
 - **Input flow**: User loads a JSON cluster plan → selects optimisation mode (headroom/green/weighted) → optionally adjusts constraints → runs planner.
 - **Output flow**: Displays the generated schedule, day-by-day move list, grid visualisation, and power/RSU reports.
 - Provides grid visualisation of rack layout (rack types colour-coded by generation/service).
 - Allows re-running with adjusted parameters without reloading the plan.
 
-### Configurable Constraints Interface (Stretch)
+### P1 — Should Have
+#### Configurable Constraints Interface
 - Exposes all constraint parameters for user modification: timeline duration, daily move limit, RSU min/max thresholds, power caps, row reservation count.
 - Enables scenario modelling (e.g., 9-month extended timeline, reduced daily capacity).
 
-### Even Distribution Across Rows (Stretch)
+### P2 — Could Have
+#### Even Distribution Across Rows
 - Balances compute, storage, and AI rack types evenly across all active rows.
 - Power distribution per row should converge toward uniformity as part of the optimisation target.
 
