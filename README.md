@@ -22,5 +22,6 @@ Frontend:
 
 ## Further Reading
 
-See 'ARCHITECTURE.MD' for a breakdown of the structure of the application
-SEE 'CICD.MD' for an outline of testing and deployment services
+See [ARCHITECTURE.MD](docs/ARCHITECTURE.MD) for a breakdown of the structure of the application.
+See [CICD.MD](docs/CICD.MD) for an outline of testing and deployment services.
+See [REQUIREMENTS.MD](docs/REQUIREMENTS.MD) for our product requirements document.
