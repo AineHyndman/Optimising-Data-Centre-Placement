@@ -1,60 +1,68 @@
-// frontend/src/DataCentreGrid.tsx
 import React from 'react';
 import type { Grid } from './utils';
 
-// Helper to map JSON color names to real CSS colors
-const getColor = (rackType: string | null): string => {
-  if (!rackType) return '#eee'; // Grey for empty spots
-  
-  if (rackType.startsWith('C')) return '#ef4444'; // Red (Compute)
-  if (rackType.startsWith('S')) return '#3b82f6'; // Blue (Storage)
-  if (rackType.startsWith('A')) return '#a855f7'; // Purple (AI)
-  
-  return '#6b7280'; // Default grey
-};
-
-interface Props {
+interface DataCentreGridProps {
   grid: Grid;
   title: string;
 }
 
-export const DataCentreGrid: React.FC<Props> = ({ grid, title }) => {
+export const DataCentreGrid: React.FC<DataCentreGridProps> = ({ grid, title }) => {
+  // Requirement: Compute=Blue, Storage=Green, AI=Purple
+  const getCellColor = (value: string | null) => {
+    if (!value) return '#eee'; // Empty cell (Grey)
+
+    // Check the first letter of the rack ID (e.g., "C" from "C23")
+    const type = value.charAt(0).toUpperCase();
+
+    switch (type) {
+      case 'C': return '#4A90E2'; // Compute -> Blue
+      case 'S': return '#50E3C2'; // Storage -> Green
+      case 'A': return '#BD10E0'; // AI -> Purple
+      default: return '#ccc';     // Unknown -> Dark Grey
+    }
+  };
+
   return (
-    <div style={{ margin: '20px', fontFamily: 'monospace' }}>
+    <div style={{ marginTop: '20px' }}>
       <h3>{title}</h3>
-      
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(16, 25px)', 
-        gap: '2px',
-        backgroundColor: '#222',
-        padding: '10px',
-        width: 'fit-content'
-      }}>
-        
-        {grid.map((row, rowIndex) => (
-          <React.Fragment key={rowIndex}>
-            {row.map((cellValue, colIndex) => (
+      <div
+        style={{
+          display: 'grid',
+          // 47 rows, 12 columns
+          gridTemplateColumns: 'repeat(12, 40px)',
+          gridTemplateRows: 'repeat(47, 40px)', 
+          gap: '2px',
+        }}
+      >
+        {/* Render rows 1 to 47 */}
+        {Array.from({ length: 47 }).map((_, rowIndex) => {
+          const rowKey = rowIndex + 1; // 1-based index
+          return Array.from({ length: 12 }).map((_, colIndex) => {
+            const colKey = colIndex + 1; // 1-based index
+            const cellValue = grid[rowKey]?.[colKey] || null;
+
+            return (
               <div
-                key={`${rowIndex}-${colIndex}`}
-                title={`Row ${rowIndex + 1}, Pos ${colIndex + 1}: ${cellValue || 'Empty'}`}
+                key={`${rowKey}-${colKey}`}
                 style={{
-                  width: '25px',
-                  height: '25px',
-                  backgroundColor: getColor(cellValue),
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: getCellColor(cellValue),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '10px',
-                  color: 'white',
-                  borderRadius: '2px'
+                  color: cellValue ? 'white' : 'transparent',
+                  fontWeight: 'bold',
+                  border: '1px solid #ddd',
                 }}
+                title={`Row: ${rowKey}, Col: ${colKey}`}
               >
-                {cellValue || ''}
+                {cellValue}
               </div>
-            ))}
-          </React.Fragment>
-        ))}
+            );
+          });
+        })}
       </div>
     </div>
   );
