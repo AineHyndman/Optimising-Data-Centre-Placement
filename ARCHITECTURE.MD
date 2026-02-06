@@ -82,7 +82,7 @@ Below are alternative approaches and the main drawbacks compared to the current 
 
 1. **Next.js (React) + Node.js API (Express/NestJS)**
    - **Pros:** Single-language TypeScript across frontend and backend; rich React ecosystem.
-   - **Drawbacks:** Heavier runtime footprint for the API layer, and greater complexity when you only need a small, fast JSON API. Node server tuning and build pipelines can add operational overhead for a project at this stage.
+   - **Drawbacks:** Heavier runtime footprint for the API layer, and greater complexity when you only need a small, fast JSON API. Node server tuning and build pipelines can add operational overhead for a project at this stage. Plus specifically optimised to run on Vercel's platform, which itself is not a particularly sustainable deployment service, and prevents us from utilising more climate-friendly providers.
 
 2. **Django + Django Templates (monolith)**
    - **Pros:** Batteries-included framework with admin and ORM.
