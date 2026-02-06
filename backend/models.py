@@ -37,9 +37,9 @@ class SuitePlan(BaseModel):
     datacenter: Optional[str] = None
     suite: Optional[str] = None
     total_power_usage: Optional[float] = None
-    compute: Optional[int] = None
-    storage: Optional[int] = None
-    ai: Optional[int] = None
+    compute: Optional[float] = None  # Changed to float
+    storage: Optional[float] = None  # Changed to float
+    ai: Optional[float] = None       # Changed to float
     generation_distribution: Optional[Dict[str, int]] = None
     positions: List[Position]
 

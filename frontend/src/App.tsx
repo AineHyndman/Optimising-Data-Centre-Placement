@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import './App.css';
-// Matches "types.ts" from your list
-import type { ClusterPlan, SuitePlan } from './types';
-// Matches "utils.ts" from your list
+import type { ClusterPlan } from './types'; 
 import { parsePositionsToGrid } from './utils';
-// Matches "DataCentreGrid.tsx" from your list
 import { DataCentreGrid } from './DataCentreGrid';
 
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
+  const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0); // <--- New State
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -18,6 +16,8 @@ function App() {
 
     setLoading(true);
     setError('');
+    // Reset selection to the first suite when a new file is uploaded
+    setSelectedSuiteIndex(0);
 
     const formData = new FormData();
     formData.append('file', file);
@@ -43,29 +43,51 @@ function App() {
     }
   };
 
+  // Helper to safely get the current suite
+  const currentSuite = plan?.cluster_plans?.[selectedSuiteIndex];
+
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Data Centre Visualiser (Full Stack)</h1>
+      <h1>Data Centre Visualiser</h1>
       
+      {/* File Upload Section */}
       <div style={{ marginBottom: '20px' }}>
         <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} />
-        
         {loading && <p>Processing on server...</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </div>
 
-      {plan ? (
-        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-          {plan.cluster_plans.map((suite: SuitePlan, index: number) => (
-            <DataCentreGrid 
-              key={index}
-              title={`Suite: ${suite.datacenter || 'Unknown'} - ${suite.suite || index + 1}`}
-              grid={parsePositionsToGrid(suite.positions)}
-            />
-          ))}
+      {/* Main Visualization Section */}
+      {plan && currentSuite ? (
+        <div>
+          {/* --- THE NEW DROPDOWN --- */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ marginRight: '10px', fontWeight: 'bold' }}>Select Suite:</label>
+            <select 
+              value={selectedSuiteIndex} 
+              onChange={(e) => setSelectedSuiteIndex(Number(e.target.value))}
+              style={{ padding: '5px', fontSize: '16px' }}
+            >
+              {plan.cluster_plans.map((suite, index) => (
+                <option key={index} value={index}>
+                  {suite.datacenter} - {suite.suite}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Render ONLY the selected suite */}
+          <DataCentreGrid 
+            title={`Viewing: ${currentSuite.datacenter} - ${currentSuite.suite}`}
+            grid={parsePositionsToGrid(currentSuite.positions)}
+          />
+          
+          <p style={{ fontSize: '0.9rem', color: '#666' }}>
+            Showing suite {selectedSuiteIndex + 1} of {plan.cluster_plans.length}
+          </p>
         </div>
       ) : (
-        <p>Please upload a plan to see the visualization.</p>
+        !loading && <p>Please upload a plan to see the visualization.</p>
       )}
     </div>
   );
