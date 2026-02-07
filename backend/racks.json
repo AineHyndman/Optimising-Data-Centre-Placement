@@ -4,62 +4,71 @@
     "Code": "c23",
     "Generation": 2023,
     "Power Need (kW)": 11,
-    "Capacity Output (RSU)": 1
+    "Capacity Output (RSU)": 1,
+    "Color": "red"
   },
   {
     "Type": "Compute",
     "Code": "c24",
     "Generation": 2024,
     "Power Need (kW)": 15,
-    "Capacity Output (RSU)": 1.4
+    "Capacity Output (RSU)": 1.4,
+    "Color": "magenta"
   },
   {
     "Type": "Compute",
     "Code": "c25",
     "Generation": 2025,
     "Power Need (kW)": 19,
-    "Capacity Output (RSU)": 2.8
+    "Capacity Output (RSU)": 2.8,
+    "Color": "bright_red"
   },
   {
     "Type": "Storage",
     "Code": "s23",
     "Generation": 2023,
     "Power Need (kW)": 20,
-    "Capacity Output (RSU)": 1
+    "Capacity Output (RSU)": 1,
+    "Color": "green"
   },
   {
     "Type": "Storage",
     "Code": "s24",
     "Generation": 2024,
     "Power Need (kW)": 22,
-    "Capacity Output (RSU)": 1.1
+    "Capacity Output (RSU)": 1.1,
+    "Color": "cyan"
   },
   {
     "Type": "Storage",
     "Code": "s25",
     "Generation": 2025,
     "Power Need (kW)": 24,
-    "Capacity Output (RSU)": 1.4
+    "Capacity Output (RSU)": 1.4,
+    "Color": "bright_green"
   },
   {
     "Type": "AI",
     "Code": "a23",
     "Generation": 2023,
     "Power Need (kW)": 15,
-    "Capacity Output (RSU)": 1
+    "Capacity Output (RSU)": 1,
+    "Color": "blue"
   },
   {
     "Type": "AI",
     "Code": "a24",
     "Generation": 2024,
     "Power Need (kW)": 29,
-    "Capacity Output (RSU)": 2.8
+    "Capacity Output (RSU)": 2.8,
+    "Color": "white"
   },
   {
     "Type": "AI",
     "Code": "a25",
     "Generation": 2025,
     "Power Need (kW)": 48,
-    "Capacity Output (RSU)": 4.2
+    "Capacity Output (RSU)": 4.2,
+    "Color": "bright_magenta"
   }
 ]
