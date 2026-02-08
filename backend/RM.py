@@ -2,15 +2,11 @@ import json
 
 # Opens "racks.json" as a readable file
 with open("racks.json", 'r') as rackfile:
-
-    # Loads values from the file into rack_list
-    rack_list = json.load(rackfile)
-
     # Build a dictionary with Codes for keys
-    racks = {r["Code"]: r for r in rack_list}
+    racks = {r["Code"]: r for r in json.load(rackfile)}
 
 # Class for the racks
-class rack:
+class Rack:
     def __init__(self, code):
         # Set code to the inputted code
         self.code = code
@@ -38,14 +34,22 @@ class rack:
         if self.type is None or self.generation is None or self.powerNeed is None or self.capacity is None or self.color is None:
             raise ValueError("Not valid code")
 
-    # Function to print all the values
-    def print(self):
-        print("Code:", self.code, "  Generation:", self.generation, "  Power Consumption:", self.powerNeed, "kW  Capacity Output:", self.capacity, "RSU  Color:", self.color)
 
-
+    def __repr__(self):
+        return (
+            f"Rack=(code={self.code}, "
+            f"type={self.type}, "
+            f"generation={self.generation}, "
+            f"powerNeed={self.powerNeed}, "
+            f"capacity={self.capacity}, "
+            f"color={self.color})"
+        )
+    
+"""
 def test():
-    myRack = rack("a25")
-    myRack.print()
+    myRack = Rack("a25")
+    print(myRack)
     print(myRack.generation + 6)
 
 test()
+"""
