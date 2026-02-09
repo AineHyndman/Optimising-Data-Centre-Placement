@@ -1,5 +1,5 @@
 // frontend/src/utils.ts
-import type { ClusterPlan, SuitePlan, Position } from './types';
+import type { ClusterPlan, Position } from './types';
 
 // The grid size you requested
 const ROWS = 48;
@@ -42,8 +42,13 @@ export function parsePositionsToGrid(positions: Position[]): Grid {
 /**
  * Validates if the uploaded JSON is a valid Cluster Plan
  */
-export function validatePlan(data: any): data is ClusterPlan {
-  if (!data || !data.constraints || !data.rack_types || !data.cluster_plans) {
+export function validatePlan(data: unknown): data is ClusterPlan {
+  if (!data || typeof data !== 'object') {
+    throw new Error("Invalid JSON: Data is not an object");
+  }
+
+  const obj = data as Record<string, unknown>;
+  if (!obj.constraints || !obj.rack_types || !obj.cluster_plans) {
     throw new Error("Invalid JSON: Missing main sections (constraints, rack_types, or cluster_plans)");
   }
   return true;
