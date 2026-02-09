@@ -1,22 +1,30 @@
-class PositionModel:
+from RM import Rack
+from typing import Optional
+
+class Position:
     
-    def __init__(self, rack, suite, row, position):
+    def __init__(self, rack: Optional[Rack]=None, suite: int = 0, row: int = 0, position: int = 0):
+        self.rack: Optional[Rack] = rack
+        self.suite = suite
         self.row = row
         self.position = position
-        self.suite = suite
-        self.rack = rack
     
     def __repr__(self):
-        return f"rackPosition(Suite={self.suite}, Row={self.row}, Position={self.position}, Rack={self.rack})"
+        return (
+            f"Position(Suite={self.suite}, "
+            f"Row={self.row}, "
+            f"Position={self.position}, "
+            f"Rack={self.rack})"
+        )
 
     def removeRack(self):
-        if (self.rack != None):
+        if self.rack is not None:
             self.rack = None
         else:
             raise ValueError("Rack is already empty.")
         
     def addRack(self, rack):
-        if (self.rack == None):
+        if self.rack is None:
             self.rack = rack
         else:
             raise ValueError(f"There is already a {self.rack} rack.")
@@ -25,7 +33,7 @@ class PositionModel:
         return self.rack
 
     def setSuite(self, number):
-        if (number <= 3 and number >= 0):
+        if 0 <= number <= 3:
             self.suite = number
         else:
             raise ValueError("Suite index must be between 0 and 3.")
@@ -34,7 +42,7 @@ class PositionModel:
         return self.suite
     
     def setRow(self, number):
-        if (number <= 47 and number >= 0):
+        if 0 <= number <= 47:
             self.row = number
         else:
             raise ValueError("Row index must be between 0 and 47.")          
@@ -43,9 +51,9 @@ class PositionModel:
         return self.row
 
     def setPosition(self, number):
-        if (number <= 15 and number >= 0):
+        if 0 <= number <= 15:
             self.position = number
-        # else:
+        else:
             raise ValueError("Position index must be between 0 and 15.")       
 
     def getPosition(self):
