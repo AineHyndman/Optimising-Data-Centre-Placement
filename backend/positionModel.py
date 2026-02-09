@@ -1,5 +1,6 @@
-from RM import Rack
 from typing import Optional
+
+from RM import Rack
 
 class Position:
     
