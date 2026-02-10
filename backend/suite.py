@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from row import Row  # adjust import path to match your repo
+from rows import Row  
 
 
 with open("suite.json", "r") as f:
@@ -9,12 +9,7 @@ with open("suite.json", "r") as f:
 
 
 class Suite:
-    """
-    A suite has:
-      - list of rows
-      - max power (12.5 MW)
-      - emergency power (0.5 MW)
-    """
+    
     def __init__(self):
         self.id = suite_data.get("SuiteId", "UnknownSuite")
         self.max_power_mw = float(suite_data.get("MaxPowerMW", 12.5))
@@ -36,7 +31,6 @@ class Suite:
         return int(self.emergency_power_mw * 1000)
 
     def allowed_power_kw(self) -> int:
-        """Max + emergency headroom."""
         return self.max_power_kw() + self.emergency_power_kw()
 
     def is_over_power_budget(self) -> bool:
