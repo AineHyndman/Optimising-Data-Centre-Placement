@@ -1,6 +1,7 @@
 class emergencyPower:
     def __init__(self):
         self.days = 0
+        self.active = False
     
     def new_day(self):
         self.days += 1

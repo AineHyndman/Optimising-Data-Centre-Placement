@@ -48,12 +48,17 @@ class Suite:
         # Returns in kw
     
     def emergency_power_active(self) -> bool:
-        return self.total_power_kw() > self.max_power_kw()
+        if self.total_power_kw() > self.max_power_kw():
+            self.emergencyEvent.active = True
+            return True
+        else:
+            self.emergencyEvent.active = False
+            return False
         # Checks if emergency power is active, if not will activate on True
     
     # Will properly implement the function below when the basic simulation will be complete
     def emergency(self):
-        if self.emergency_power_active():
+        if self.emergencyEvent.active:
             self.emergencyEvent.new_day()
         else:
             self.emergencyEvent.days = 0
@@ -75,7 +80,7 @@ class Suite:
             f"rsu_totals={self.rsu_totals()})"
         )
 
-"""
+
 def test():
     print("Test")
     mine = Suite()
@@ -101,4 +106,3 @@ def test():
 
 
 test()
-"""
