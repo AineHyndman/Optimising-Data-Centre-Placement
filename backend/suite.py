@@ -2,6 +2,7 @@ import json
 from typing import List
 
 from rows import Row  
+from powerConstraintChecker import emergencyPower
 
 
 with open("suite.json", "r") as f:
@@ -14,6 +15,9 @@ class Suite:
         self.id = suite_data.get("SuiteId", "UnknownSuite")
         self.max_power_mw = float(suite_data.get("MaxPowerMW", 12.5))
         self.emergency_power_mw = float(suite_data.get("EmergencyPowerMW", 0.5))
+
+        # Emergency Power object
+        self.emergencyEvent = emergencyPower(self)
 
         row_ids = suite_data.get("Rows")
         if not isinstance(row_ids, list) or len(row_ids) == 0:
@@ -35,6 +39,15 @@ class Suite:
 
     def is_over_power_budget(self) -> bool:
         return self.total_power_kw() > self.allowed_power_kw()
+    
+    # Check Suite
+    def available_power_kw(self) -> int:
+        return self.allowed_power_kw() - self.total_power_kw()
+        # Returns in kw
+    
+    def emergency_power_active(Suite mySuite) -> bool:
+        return mySuite.total_power_kw() > mySuite.max_power_kw()
+        # Checks if emergency power is active, if not will activate on True
 
     def rsu_totals(self) -> dict:
         totals = {"Compute": 0.0, "Storage": 0.0, "AI": 0.0}
