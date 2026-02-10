@@ -1,0 +1,6 @@
+{
+  "SuiteId": "Suite-A",
+  "MaxPowerMW": 12.5,
+  "EmergencyPowerMW": 0.5,
+  "Rows": ["R01", "R02"]
+}
