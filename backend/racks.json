@@ -70,5 +70,13 @@
     "Power Need (kW)": 48,
     "Capacity Output (RSU)": 4.2,
     "Color": "bright_magenta"
+  },
+  {
+    "Type": "Empty",
+    "Code": "",
+    "Generation": 0,
+    "Power Need (kW)": 0,
+    "Capacity Output (RSU)": 0,
+    "Color": "gray"
   }
 ]

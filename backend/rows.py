@@ -45,6 +45,14 @@ class Row:
             totals[r.type] += r.capacity
         return totals
 
+    def rack_space(self) -> int:
+        count = 0
+        for r in self.racks:
+            if r.empty == True:
+                count += 1
+        return count
+
+
     def __repr__(self) -> str:
         codes = [r.code if r is not None else None for r in self.racks]
         return (
@@ -52,4 +60,13 @@ class Row:
             f"total_power_kw={self.total_power_kw()}, "
             f"positions={codes})"
         )
-    
+
+"""
+def test():
+    myRow = Row("R01")
+    print("Test")
+    print(myRow)
+    print(myRow.rack_space())
+
+test()
+"""

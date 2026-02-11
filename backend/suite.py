@@ -72,9 +72,9 @@ class Suite:
             f"rsu_totals={self.rsu_totals()})"
         )
 
-
+"""
 def test():
-    print("Test")
+    print("Test ")
     mine = Suite()
     print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power_active())
     print(mine.emergencyEvent.available_days())
@@ -98,3 +98,4 @@ def test():
 
 
 test()
+"""
