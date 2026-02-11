@@ -10,3 +10,10 @@ class emergencyPower:
     
     def available_days(self) -> int:
         return 7 - self.days
+    
+    # Will properly implement the function below when the basic simulation will be complete
+    def emergency(self):
+        if self.active:
+            self.new_day()
+        else:
+            self.days = 0

@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from rows import Row  
+from rows import Row
 from powerConstraintChecker import emergencyPower
 
 
@@ -41,7 +41,6 @@ class Suite:
         return self.total_power_kw() > self.allowed_power_kw()
     
 
-
     # Check Suite
     def available_power_kw(self) -> int:
         return self.allowed_power_kw() - self.total_power_kw()
@@ -55,14 +54,7 @@ class Suite:
             self.emergencyEvent.active = False
             return False
         # Checks if emergency power is active, if not will activate on True
-    
-    # Will properly implement the function below when the basic simulation will be complete
-    def emergency(self):
-        if self.emergencyEvent.active:
-            self.emergencyEvent.new_day()
-        else:
-            self.emergencyEvent.days = 0
-        
+
 
     def rsu_totals(self) -> dict:
         totals = {"Compute": 0.0, "Storage": 0.0, "AI": 0.0}
@@ -86,22 +78,22 @@ def test():
     mine = Suite()
     print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power_active())
     print(mine.emergencyEvent.available_days())
-    mine.emergency()
+    mine.emergencyEvent.emergency()
     print(mine.emergencyEvent.available_days())
-    mine.emergency()
+    mine.emergencyEvent.emergency()
     print(mine.emergencyEvent.available_days())
-    mine.emergency()
+    mine.emergencyEvent.emergency()
     print(mine.emergencyEvent.available_days())
-    mine.emergency()
+    mine.emergencyEvent.emergency()
     print(mine.emergencyEvent.available_days())
-    mine.emergency()
+    mine.emergencyEvent.emergency()
     print(mine.emergencyEvent.available_days())
-    mine.emergency()
+    mine.emergencyEvent.emergency()
     print(mine.emergencyEvent.available_days())
-    mine.emergency()
+    mine.emergencyEvent.emergency()
     print(mine.emergencyEvent.available_days())
     # Will cause error on the next call of emergency, since there are no more available days
-    #mine.emergency()
+    #mine.emergencyEvent.emergency()
     #print(mine.emergencyEvent.available_days())
 
 
