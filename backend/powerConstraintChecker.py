@@ -17,3 +17,4 @@ class emergencyPower:
             self.new_day()
         else:
             self.days = 0
+

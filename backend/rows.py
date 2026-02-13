@@ -40,7 +40,7 @@ class Row:
     def rsu_by_type(self) -> dict:
         totals = {"Compute": 0.0, "Storage": 0.0, "AI": 0.0}
         for r in self.racks:
-            if r is None:
+            if r is None or r.type == "Empty":
                 continue
             totals[r.type] += r.capacity
         return totals
@@ -60,6 +60,7 @@ class Row:
             f"total_power_kw={self.total_power_kw()}, "
             f"positions={codes})"
         )
+    
 
 """
 def test():
