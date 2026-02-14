@@ -17,11 +17,15 @@ class Rack:
         self.powerNeed = None
         self.capacity = None
         self.color = None
+        self.empty = False
 
         # Get the correct rack row
         rack = racks.get(code)
         if rack is None:
             raise ValueError("Not valid code")
+        
+        if self.code is "":
+            self.empty = True
 
         # Change the variables to their correct values
         self.type = rack["Type"]

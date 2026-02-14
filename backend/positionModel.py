@@ -55,11 +55,7 @@ class Position:
         if 0 <= number <= 15:
             self.position = number
         else:
-            raise ValueError("Position index must be between 0 and 15.")       
+            raise ValueError("Position index must be between 0 and 15.")
 
     def getPosition(self):
         return self.position
-    
-        
-    
-        
