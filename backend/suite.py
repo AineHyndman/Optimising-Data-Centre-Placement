@@ -142,7 +142,7 @@ class Suite:
 
 
 """
-# This is a test below, with a fake simulation of days passing
+# This is a test below, with a fake simulation of days passing, which will be later done in the full simulation
 
 
 def test_day(mine: Suite()):
