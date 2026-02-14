@@ -2,7 +2,7 @@ import json
 from typing import List
 
 from rows import Row
-from powerConstraintChecker import emergencyPower
+from Emergency import EmergencyPower
 
 
 with open("suite.json", "r") as f:
@@ -26,7 +26,7 @@ class Suite:
 
 
         # Emergency Power object
-        self.emergencyEvent = emergencyPower()
+        self.emergencyEvent = EmergencyPower()
 
         row_ids = suite_data.get("Rows")
         if not isinstance(row_ids, list) or len(row_ids) == 0:
