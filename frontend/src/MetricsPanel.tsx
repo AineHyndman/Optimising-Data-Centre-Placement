@@ -9,7 +9,7 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ suite }) => {
   
   // Calculate stats dynamically from the positions list
   const stats = useMemo(() => {
-    let counts = {
+    const counts = {
       gen23: 0, gen24: 0, gen25: 0,
       compute: 0, storage: 0, ai: 0,
       totalRacks: 0
