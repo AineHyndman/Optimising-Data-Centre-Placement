@@ -45,11 +45,3 @@ class Rack:
             f"color={self.color})"
         )
     
-"""
-def test():
-    myRack = Rack("a25")
-    print(myRack)
-    print(myRack.generation + 6)
-
-test()
-"""
