@@ -1,0 +1,20 @@
+class EmergencyPower:
+    def __init__(self):
+        self.days = 0
+        self.active = False
+    
+    def new_day(self):
+        self.days += 1
+        if self.days > 7:
+            raise ValueError("Max usage for emergency power exceeds limits")
+    
+    def available_days(self) -> int:
+        return 7 - self.days
+    
+    # Will properly implement the function below when the basic simulation will be complete
+    def emergency(self):
+        if self.active:
+            self.new_day()
+        else:
+            self.days = 0
+

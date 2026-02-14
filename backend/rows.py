@@ -40,10 +40,18 @@ class Row:
     def rsu_by_type(self) -> dict:
         totals = {"Compute": 0.0, "Storage": 0.0, "AI": 0.0}
         for r in self.racks:
-            if r is None:
+            if r is None or r.type == "Empty":
                 continue
             totals[r.type] += r.capacity
         return totals
+
+    def rack_space(self) -> int:
+        count = 0
+        for r in self.racks:
+            if r.empty == True:
+                count += 1
+        return count
+
 
     def __repr__(self) -> str:
         codes = [r.code if r is not None else None for r in self.racks]
@@ -53,3 +61,13 @@ class Row:
             f"positions={codes})"
         )
     
+
+"""
+def test():
+    myRow = Row("R01")
+    print("Test")
+    print(myRow)
+    print(myRow.rack_space())
+
+test()
+"""
