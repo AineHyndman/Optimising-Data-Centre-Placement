@@ -43,8 +43,15 @@ class Suite:
     def emergency_power_kw(self) -> int:
         return int(self.emergency_power_mw * 1000)
 
+
+
+    """
+    
+    CHECK: function allowed_power_kw below, changes value depending on whether the emergency power is available or not
+
+    """
     def allowed_power_kw(self) -> int:
-        return self.max_power_kw() + self.emergency_power_kw()
+        return self.max_power_kw() + (self.emergency_power_kw() if not self.emergencyEvent.cooldown else 0)
 
     def is_over_power_budget(self) -> bool:
         return self.total_power_kw() > self.allowed_power_kw()
@@ -54,12 +61,17 @@ class Suite:
     def available_power_kw(self) -> int:
         return self.allowed_power_kw() - self.total_power_kw()
     
-    def emergency_power_active(self) -> bool:
+    def emergency_power(self) -> bool:
         if self.total_power_kw() > self.max_power_kw():
+            """
+            if self.emergencyEvent.cooldown:
+                raise ValueError("Cooldown is still active, unable to use emergency power")
+            self.emergencyEvent.active = True
+            """
             self.emergencyEvent.active = True
             return True
         else:
-            self.emergencyEvent.active = False
+            self.emergencyEvent.cooldown = False
             return False
         # Checks if emergency power is active, if not will activate on True
     
@@ -127,7 +139,19 @@ class Suite:
         )
     
 
-"""
+
+
+
+# This is a test below, with a fake simulation of days passing
+
+
+def test_day(mine: Suite()):
+    mine.emergency_power()
+    mine.emergencyEvent.progress()
+    print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power())
+    print(mine.emergencyEvent.available_days())
+
+
 def test():
     print("Test ")
     mine = Suite()
@@ -136,26 +160,21 @@ def test():
     print(mine.check_rsu_min(""))
     print(mine.check_empty_spaces())
     
-    print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power_active())
+    print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power())
     print(mine.emergencyEvent.available_days())
-    mine.emergencyEvent.emergency()
-    print(mine.emergencyEvent.available_days())
-    mine.emergencyEvent.emergency()
-    print(mine.emergencyEvent.available_days())
-    mine.emergencyEvent.emergency()
-    print(mine.emergencyEvent.available_days())
-    mine.emergencyEvent.emergency()
-    print(mine.emergencyEvent.available_days())
-    mine.emergencyEvent.emergency()
-    print(mine.emergencyEvent.available_days())
-    mine.emergencyEvent.emergency()
-    print(mine.emergencyEvent.available_days())
-    mine.emergencyEvent.emergency()
-    print(mine.emergencyEvent.available_days())
-    # Will cause error on the next call of emergency, since there are no more available days
-    #mine.emergencyEvent.emergency()
-    #print(mine.emergencyEvent.available_days())
+
+
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+    test_day(mine)
+
 
 
 test()
-"""
