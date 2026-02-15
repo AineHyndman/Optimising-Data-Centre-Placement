@@ -3,7 +3,7 @@ import './App.css';
 import type { ClusterPlan } from './types'; 
 import { parsePositionsToGrid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
-import { Sidebar } from './Sidebar'; // <-- Import the new Sidebar
+import { Sidebar } from './Sidebar';
 
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
@@ -52,32 +52,31 @@ function App() {
           <span style={{ color: '#666', fontSize: '12px', fontWeight: 'normal' }}>Configuration Viewer</span>
         </h2>
         
+        {/* Only show these controls if a plan is already loaded */}
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} style={{ fontSize: '14px', color: '#ccc' }}/>
-          
           {plan && (
-            <select 
-              value={selectedSuiteIndex} 
-              onChange={(e) => setSelectedSuiteIndex(Number(e.target.value))}
-              style={{ padding: '6px 12px', backgroundColor: '#1a1d24', color: '#fff', border: '1px solid #333', borderRadius: '4px' }}
-            >
-              {plan.cluster_plans.map((suite, index) => (
-                  <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>
-              ))}
-            </select>
+            <>
+              <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} style={{ fontSize: '14px', color: '#ccc' }}/>
+              <select 
+                value={selectedSuiteIndex} 
+                onChange={(e) => setSelectedSuiteIndex(Number(e.target.value))}
+                style={{ padding: '6px 12px', backgroundColor: '#1a1d24', color: '#fff', border: '1px solid #333', borderRadius: '4px' }}
+              >
+                {plan.cluster_plans.map((suite, index) => (
+                    <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>
+                ))}
+              </select>
+            </>
           )}
         </div>
       </div>
 
       {/* Main Content Area */}
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {error && <div style={{ color: '#ff4444', marginBottom: '20px' }}>{error}</div>}
+        {error && <div style={{ color: '#ff4444', marginBottom: '20px', textAlign: 'center' }}>{error}</div>}
         
         {plan && currentSuite ? (
-          // Two-Column Flex Layout
           <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-            
-            {/* Left Column: Grid */}
             <div style={{ flex: 1, backgroundColor: '#1a1d24', padding: '24px', borderRadius: '8px', border: '1px solid #333' }}>
               <div style={{ marginBottom: '20px', fontSize: '14px', fontWeight: 'bold', color: '#ccc' }}>Suite Layout</div>
               <DataCentreGrid 
@@ -85,13 +84,33 @@ function App() {
                 grid={parsePositionsToGrid(currentSuite.positions)}
               />
             </div>
-
-            {/* Right Column: Sidebar */}
             <Sidebar suite={currentSuite} />
-
           </div>
         ) : (
-          !loading && <div style={{ textAlign: 'center', color: '#666', marginTop: '100px' }}>Upload a JSON plan to begin.</div>
+          /* NEW: Beautiful Empty State */
+          !loading && (
+            <div style={{ 
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+              marginTop: '80px', padding: '60px 20px', backgroundColor: '#1a1d24', 
+              borderRadius: '12px', border: '1px dashed #444', maxWidth: '600px', margin: '80px auto' 
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '20px' }}>📁</div>
+              <h3 style={{ margin: '0 0 10px 0', color: '#E0E0E0', fontSize: '20px' }}>No Suite Configuration Loaded</h3>
+              <p style={{ color: '#888', marginBottom: '30px', textAlign: 'center', fontSize: '14px', lineHeight: '1.5' }}>
+                Upload a data centre layout file (.json) to visualize the rack configuration, <br/>
+                compute capacity, and power distribution.
+              </p>
+              
+              <label style={{ 
+                backgroundColor: '#4A90E2', color: '#fff', padding: '12px 24px', 
+                borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px',
+                transition: 'background-color 0.2s'
+              }}>
+                Choose JSON File
+                <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
+              </label>
+            </div>
+          )
         )}
       </div>
     </div>
