@@ -3,7 +3,7 @@ import './App.css';
 import type { ClusterPlan } from './types'; 
 import { parsePositionsToGrid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
-import { MetricsPanel } from './MetricsPanel'; // <--- Import the new component
+import { Sidebar } from './Sidebar'; // <-- Import the new Sidebar
 
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
@@ -28,16 +28,13 @@ function App() {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`Server Error: ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
 
       const json = await response.json();
       setPlan(json);
       
     } catch (err) {
       setError('Failed to process file with backend. Is Docker running?');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -46,46 +43,57 @@ function App() {
   const currentSuite = plan?.cluster_plans?.[selectedSuiteIndex];
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>Data Centre Visualiser</h1>
+    <div style={{ padding: '20px', minHeight: '100vh', backgroundColor: '#0f1115', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      {/* File Upload */}
-      <div style={{ marginBottom: '20px' }}>
-        <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} />
-        {loading && <p>Processing on server...</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </div>
-
-      {plan && currentSuite ? (
-        <div>
-          {/* Controls: Suite Dropdown */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ marginRight: '10px', fontWeight: 'bold' }}>Select Suite:</label>
+      {/* Top Header Section */}
+      <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
+        <h2 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ color: '#4A90E2' }}>🗄️ Data Centre Suite</span> 
+          <span style={{ color: '#666', fontSize: '12px', fontWeight: 'normal' }}>Configuration Viewer</span>
+        </h2>
+        
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} style={{ fontSize: '14px', color: '#ccc' }}/>
+          
+          {plan && (
             <select 
               value={selectedSuiteIndex} 
               onChange={(e) => setSelectedSuiteIndex(Number(e.target.value))}
-              style={{ padding: '8px', fontSize: '16px', borderRadius: '4px' }}
+              style={{ padding: '6px 12px', backgroundColor: '#1a1d24', color: '#fff', border: '1px solid #333', borderRadius: '4px' }}
             >
               {plan.cluster_plans.map((suite, index) => (
-                  <option key={index} value={index}>
-                    {suite.datacenter} - {suite.suite}
-                  </option>
+                  <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>
               ))}
             </select>
-          </div>
-          
-          {/* --- NEW METRICS PANEL --- */}
-          <MetricsPanel suite={currentSuite} />
-          {/* ------------------------- */}
-
-          <DataCentreGrid 
-            title={`Visual Layout: ${currentSuite.datacenter} - ${currentSuite.suite}`}
-            grid={parsePositionsToGrid(currentSuite.positions)}
-          />
+          )}
         </div>
-      ) : (
-        !loading && <p>Please upload a plan to see the visualization.</p>
-      )}
+      </div>
+
+      {/* Main Content Area */}
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {error && <div style={{ color: '#ff4444', marginBottom: '20px' }}>{error}</div>}
+        
+        {plan && currentSuite ? (
+          // Two-Column Flex Layout
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+            
+            {/* Left Column: Grid */}
+            <div style={{ flex: 1, backgroundColor: '#1a1d24', padding: '24px', borderRadius: '8px', border: '1px solid #333' }}>
+              <div style={{ marginBottom: '20px', fontSize: '14px', fontWeight: 'bold', color: '#ccc' }}>Suite Layout</div>
+              <DataCentreGrid 
+                title="" 
+                grid={parsePositionsToGrid(currentSuite.positions)}
+              />
+            </div>
+
+            {/* Right Column: Sidebar */}
+            <Sidebar suite={currentSuite} />
+
+          </div>
+        ) : (
+          !loading && <div style={{ textAlign: 'center', color: '#666', marginTop: '100px' }}>Upload a JSON plan to begin.</div>
+        )}
+      </div>
     </div>
   );
 }
