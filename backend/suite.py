@@ -1,9 +1,8 @@
 import json
 from typing import List
 
-from rows import Row
 from Emergency import EmergencyPower
-
+from rows import Row
 
 with open("suite.json", "r") as f:
     suite_data = json.load(f)

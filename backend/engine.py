@@ -1,7 +1,8 @@
-from typing import List, Callable, Dict
 from dataclasses import replace
-from .models import SuiteState, Day
+from typing import Callable, Dict, List
+
 from .actions import Action
+from .models import Day, SuiteState
 
 
 class SimulationEngine:

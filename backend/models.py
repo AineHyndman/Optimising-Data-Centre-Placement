@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
+
 # --- Helper Models ---
 class Range(BaseModel):
     min: float  # Changed from int to float

@@ -1,6 +1,6 @@
+from collections import Counter
 from dataclasses import dataclass, replace
 from typing import Dict, Tuple
-from collections import Counter
 
 Position = Tuple[int, int]
 RackId = str

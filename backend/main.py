@@ -2,7 +2,6 @@ import json
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-
 from models import PlanData
 
 app = FastAPI()

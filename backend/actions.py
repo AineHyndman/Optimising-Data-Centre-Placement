@@ -1,6 +1,7 @@
-from typing import Callable
 from dataclasses import replace
-from models import SuiteState, Rack, Position, RackId
+from typing import Callable
+
+from models import Position, Rack, RackId, SuiteState
 
 Action = Callable[[SuiteState], SuiteState]
 

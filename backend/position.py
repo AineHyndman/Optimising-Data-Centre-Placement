@@ -2,6 +2,7 @@ from typing import Optional
 
 from RM import Rack
 
+
 class Position:
     
     def __init__(self, rack: Optional[Rack]=None, suite: int = 0, row: int = 0, position: int = 0):
