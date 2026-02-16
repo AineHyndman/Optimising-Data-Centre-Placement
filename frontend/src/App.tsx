@@ -46,27 +46,28 @@ function App() {
   const cols = grid?.[0]?.length || 0;
 
   return (
-    <div style={{ padding: '16px 24px', minHeight: '100vh', backgroundColor: '#0f1115', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="px-6 py-4 min-h-screen bg-[#0f1115] text-white font-sans">
 
       {/* Top Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #222' }}>
-        <h2 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ color: '#4A90E2' }}>Data Centre Suite</span>
+      <div className="flex justify-between items-center mb-5 pb-4 border-b border-[#222]">
+        <h2 className="m-0 text-lg flex items-center gap-2.5">
+          <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
+          <span className="text-[#4A90E2]">Data Centre Suite</span>
           {plan && currentSuite ? (
-            <span style={{ color: '#666', fontSize: '13px', fontWeight: 'normal' }}>{rows}x{cols} Configuration Viewer</span>
+            <span className="text-[#666] text-[13px] font-normal">{rows}x{cols} Configuration Viewer</span>
           ) : (
-            <span style={{ color: '#666', fontSize: '13px', fontWeight: 'normal' }}>Configuration Viewer</span>
+            <span className="text-[#666] text-[13px] font-normal">Configuration Viewer</span>
           )}
         </h2>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="flex gap-3 items-center">
           {plan && (
             <>
-              <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} style={{ display: 'none' }} id="file-upload" />
+              <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} className="hidden" id="file-upload" />
               <select
                 value={selectedSuiteIndex}
                 onChange={(e) => setSelectedSuiteIndex(Number(e.target.value))}
-                style={{ padding: '8px 14px', backgroundColor: '#1a1d24', color: '#fff', border: '1px solid #333', borderRadius: '6px', fontSize: '13px' }}
+                className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]"
               >
                 {plan.cluster_plans.map((suite, index) => (
                     <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>
@@ -74,13 +75,7 @@ function App() {
               </select>
             </>
           )}
-          <button
-            style={{
-              padding: '8px 20px', backgroundColor: 'transparent', color: '#4CAF50',
-              border: '1px solid #4CAF50', borderRadius: '6px', cursor: 'pointer',
-              fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px'
-            }}
-          >
+          <button className="py-2 px-5 bg-transparent text-[#4CAF50] border border-[#4CAF50] rounded-md cursor-pointer text-[13px] font-bold flex items-center gap-1.5">
             <span>&#9655;</span> Run Optimization
           </button>
         </div>
@@ -88,14 +83,14 @@ function App() {
 
       {/* Main Content Area */}
       <div>
-        {error && <div style={{ color: '#ff4444', marginBottom: '20px', textAlign: 'center' }}>{error}</div>}
+        {error && <div className="text-red-500 mb-5 text-center">{error}</div>}
 
         {plan && currentSuite && grid ? (
-          <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1, backgroundColor: '#1a1d24', padding: '24px', borderRadius: '8px', border: '1px solid #2a2d35', minWidth: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ccc' }}>Suite Layout</div>
-                <div style={{ fontSize: '12px', color: '#666' }}>{rows} rows &times; {cols} positions</div>
+          <div className="flex gap-6 items-start">
+            <div className="flex-1 bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35] min-w-0">
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                <div className="text-xs text-[#666]">{rows} rows &times; {cols} positions</div>
               </div>
               <DataCentreGrid
                 title=""
@@ -106,25 +101,17 @@ function App() {
           </div>
         ) : (
           !loading && (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              marginTop: '80px', padding: '60px 20px', backgroundColor: '#1a1d24',
-              borderRadius: '12px', border: '1px dashed #444', maxWidth: '600px', margin: '80px auto'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>📁</div>
-              <h3 style={{ margin: '0 0 10px 0', color: '#E0E0E0', fontSize: '20px' }}>No Suite Configuration Loaded</h3>
-              <p style={{ color: '#888', marginBottom: '30px', textAlign: 'center', fontSize: '14px', lineHeight: '1.5' }}>
+            <div className="flex flex-col items-center justify-center mt-20 p-[60px_20px] bg-[#1a1d24] rounded-xl border border-dashed border-[#444] max-w-[600px] mx-auto">
+              <div className="text-5xl mb-5">📁</div>
+              <h3 className="m-0 mb-2.5 text-[#E0E0E0] text-xl">No Suite Configuration Loaded</h3>
+              <p className="text-[#888] mb-7 text-center text-sm leading-relaxed">
                 Upload a data centre layout file (.json) to visualize the rack configuration, <br/>
                 compute capacity, and power distribution.
               </p>
 
-              <label style={{
-                backgroundColor: '#4A90E2', color: '#fff', padding: '12px 24px',
-                borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px',
-                transition: 'background-color 0.2s'
-              }}>
+              <label className="bg-[#4A90E2] text-white py-3 px-6 rounded-md cursor-pointer font-bold text-sm transition-colors duration-200 hover:bg-[#3a7bd5]">
                 Choose JSON File
-                <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
+                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
               </label>
             </div>
           )
