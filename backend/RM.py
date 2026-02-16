@@ -1,9 +1,10 @@
 import json
 
 # Opens "racks.json" as a readable file
-with open("racks.json", 'r') as rackfile:
+with open("racks.json", "r") as rackfile:
     # Build a dictionary with Codes for keys
     racks = {r["Code"]: r for r in json.load(rackfile)}
+
 
 # Class for the racks
 class Rack:
@@ -23,7 +24,7 @@ class Rack:
         rack = racks.get(code)
         if rack is None:
             raise ValueError("Not valid code")
-        
+
         if self.code is "":
             self.empty = True
 
@@ -33,11 +34,16 @@ class Rack:
         self.powerNeed = int(rack["Power Need (kW)"])
         self.capacity = float(rack["Capacity Output (RSU)"])
         self.color = rack["Color"]
-        
-        # If any of the variables apart from "code" are none, it raises an error
-        if self.type is None or self.generation is None or self.powerNeed is None or self.capacity is None or self.color is None:
-            raise ValueError("Not valid code")
 
+        # If any of the variables apart from "code" are none, it raises an error
+        if (
+            self.type is None
+            or self.generation is None
+            or self.powerNeed is None
+            or self.capacity is None
+            or self.color is None
+        ):
+            raise ValueError("Not valid code")
 
     def __repr__(self):
         return (
@@ -48,4 +54,3 @@ class Rack:
             f"capacity={self.capacity}, "
             f"color={self.color})"
         )
-    

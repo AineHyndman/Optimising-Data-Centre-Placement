@@ -43,4 +43,3 @@ class SuiteState:
 
     def get_rsu_per_service(self):
         return Counter(r.service for r in self.racks.values())
-

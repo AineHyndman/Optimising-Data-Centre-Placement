@@ -8,15 +8,18 @@ class Range(BaseModel):
     min: float  # Changed from int to float
     max: float  # Changed from int to float
 
+
 class Resources(BaseModel):
     compute: float  # Changed from int to float
     storage: float  # Changed from int to float
-    ai: float       # Changed from int to float
+    ai: float  # Changed from int to float
+
 
 class Position(BaseModel):
     rack_type: str
     row: str
     position: str
+
 
 # --- Main Component Models ---
 class Constraints(BaseModel):
@@ -27,6 +30,7 @@ class Constraints(BaseModel):
     generations: List[str]
     generation_ratios: Optional[Dict[str, float]] = None
 
+
 class RackSpec(BaseModel):
     name: str
     type: str
@@ -35,15 +39,17 @@ class RackSpec(BaseModel):
     power_need: int
     resources: Resources
 
+
 class SuitePlan(BaseModel):
     datacenter: Optional[str] = None
     suite: Optional[str] = None
     total_power_usage: Optional[float] = None
     compute: Optional[float] = None  # Changed to float
     storage: Optional[float] = None  # Changed to float
-    ai: Optional[float] = None       # Changed to float
+    ai: Optional[float] = None  # Changed to float
     generation_distribution: Optional[Dict[str, int]] = None
     positions: List[Position]
+
 
 # --- The Root Model (This is what main.py is looking for) ---
 class PlanData(BaseModel):

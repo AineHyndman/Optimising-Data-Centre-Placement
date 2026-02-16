@@ -9,7 +9,7 @@ with open("suite.json", "r") as f:
 
 
 class Suite:
-    
+
     def __init__(self):
         self.id = suite_data.get("SuiteId", "UnknownSuite")
         self.max_power_mw = float(suite_data.get("MaxPowerMW", 12.5))
@@ -21,8 +21,6 @@ class Suite:
         self.storage_max = int(suite_data.get("StorageMaxRSU"))
         self.AI_min = int(suite_data.get("AIMinRSU"))
         self.AI_max = int(suite_data.get("AIMaxRSU"))
-
-
 
         # Emergency Power object
         self.emergencyEvent = EmergencyPower()
@@ -42,24 +40,23 @@ class Suite:
     def emergency_power_kw(self) -> int:
         return int(self.emergency_power_mw * 1000)
 
-
-
     """
     
     CHECK: function allowed_power_kw below, changes value depending on whether the emergency power is available or not
 
     """
+
     def allowed_power_kw(self) -> int:
-        return self.max_power_kw() + (self.emergency_power_kw() if not self.emergencyEvent.cooldown else 0)
+        return self.max_power_kw() + (
+            self.emergency_power_kw() if not self.emergencyEvent.cooldown else 0
+        )
 
     def is_over_power_budget(self) -> bool:
         return self.total_power_kw() > self.allowed_power_kw()
-    
-
 
     def available_power_kw(self) -> int:
         return self.allowed_power_kw() - self.total_power_kw()
-    
+
     def emergency_power(self) -> bool:
         if self.total_power_kw() > self.max_power_kw():
             """
@@ -73,7 +70,7 @@ class Suite:
             self.emergencyEvent.cooldown = False
             return False
         # Checks if emergency power is active, if not will activate on True
-    
+
     def check_empty_spaces(self) -> int:
         count = 0
         for myRow in self.rows:
@@ -117,8 +114,6 @@ class Suite:
         # If a number is negative, it means you have gone over the limit (of min),
         # otherwise you still have space until the min
 
-
-
     def rsu_totals(self) -> dict:
         totals = {"Compute": 0.0, "Storage": 0.0, "AI": 0.0}
         for row in self.rows:
@@ -127,8 +122,6 @@ class Suite:
                 totals[k] += v
         return totals
 
-
-
     def __repr__(self) -> str:
         return (
             f"Suite=(id={self.id}, rows={len(self.rows)}, "
@@ -136,8 +129,6 @@ class Suite:
             f"allowed_power_kw={self.allowed_power_kw()}, "
             f"rsu_totals={self.rsu_totals()})"
         )
-    
-
 
 
 """
