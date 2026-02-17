@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional
 
-from RM import Rack
+from backend.model.rack import Rack
 
 with open("rows.json", "r") as f:
     rows_data = json.load(f)

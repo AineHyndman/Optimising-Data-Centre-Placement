@@ -1,6 +1,6 @@
 from typing import Optional
 
-from RM import Rack
+from backend.model.rack import Rack
 
 
 class Position:
