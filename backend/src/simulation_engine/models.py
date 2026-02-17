@@ -1,58 +1,47 @@
-from typing import Dict, List, Optional
+from dataclasses import dataclass, replace
+from typing import Dict, Tuple
+from collections import Counter
+from src.model.position import Position
 
-from pydantic import BaseModel
-
-
-# --- Helper Models ---
-class Range(BaseModel):
-    min: float  # Changed from int to float
-    max: float  # Changed from int to float
+RackId = str
+Day = int
 
 
-class Resources(BaseModel):
-    compute: float  # Changed from int to float
-    storage: float  # Changed from int to float
-    ai: float  # Changed from int to float
-
-
-class Position(BaseModel):
+@dataclass(frozen=True)
+class Rack:
+    rack_id: RackId
+    generation: str
     rack_type: str
-    row: str
-    position: str
+    service: str
+    year: int
 
 
-# --- Main Component Models ---
-class Constraints(BaseModel):
-    power_budget: int
-    compute_range: Range
-    storage_range: Range
-    ai_range: Range
-    generations: List[str]
-    generation_ratios: Optional[Dict[str, float]] = None
+@dataclass(frozen=True)
+class SuiteState:
+    day: Day
+    positions: Dict[Position, Rack | None]
+    racks: Dict[RackId, Rack]
+
+    def get_generation_counts(self):
+        return Counter(r.generation for r in self.racks.values())
+
+    def get_type_counts(self):
+        return Counter(r.rack_type for r in self.racks.values())
+
+    def get_empty_positions(self):
+        return [p for p, r in self.positions.items() if r is None]
+
+    def get_row_distribution(self):
+        rows = Counter()
+        for (row, _), rack in self.positions.items():
+            if rack:
+                rows[row] += 1
+        return dict(rows)
+
+    def get_2023_count(self):
+        return sum(1 for r in self.racks.values() if r.year == 2023)
+
+    def get_rsu_per_service(self):
+        return Counter(r.service for r in self.racks.values())
 
 
-class RackSpec(BaseModel):
-    name: str
-    type: str
-    color: str
-    generation: int
-    power_need: int
-    resources: Resources
-
-
-class SuitePlan(BaseModel):
-    datacenter: Optional[str] = None
-    suite: Optional[str] = None
-    total_power_usage: Optional[float] = None
-    compute: Optional[float] = None  # Changed to float
-    storage: Optional[float] = None  # Changed to float
-    ai: Optional[float] = None  # Changed to float
-    generation_distribution: Optional[Dict[str, int]] = None
-    positions: List[Position]
-
-
-# --- The Root Model (This is what main.py is looking for) ---
-class PlanData(BaseModel):
-    constraints: Constraints
-    rack_types: List[RackSpec]
-    cluster_plans: List[SuitePlan]
