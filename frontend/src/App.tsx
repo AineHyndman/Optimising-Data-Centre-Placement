@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import './App.css';
-import type { ClusterPlan } from './types'; 
+import type { ClusterPlan } from './types';
 import { parsePositionsToGrid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
-import { MetricsPanel } from './MetricsPanel'; // <--- Import the new component
+import { Sidebar } from './Sidebar';
 
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
@@ -28,64 +28,95 @@ function App() {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`Server Error: ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
 
       const json = await response.json();
       setPlan(json);
-      
+
     } catch (err) {
       setError('Failed to process file with backend. Is Docker running?');
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   const currentSuite = plan?.cluster_plans?.[selectedSuiteIndex];
+  const grid = currentSuite ? parsePositionsToGrid(currentSuite.positions) : null;
+  const rows = grid?.length || 0;
+  const cols = grid?.[0]?.length || 0;
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>Data Centre Visualiser</h1>
-      
-      {/* File Upload */}
-      <div style={{ marginBottom: '20px' }}>
-        <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} />
-        {loading && <p>Processing on server...</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="px-6 py-4 min-h-screen bg-[#0f1115] text-white font-sans">
+
+      {/* Top Header Section */}
+      <div className="flex justify-between items-center mb-5 pb-4 border-b border-[#222]">
+        <h2 className="m-0 text-lg flex items-center gap-2.5">
+          <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
+          <span className="text-[#4A90E2]">Data Centre Suite</span>
+          {plan && currentSuite ? (
+            <span className="text-[#666] text-[13px] font-normal">{rows}x{cols} Configuration Viewer</span>
+          ) : (
+            <span className="text-[#666] text-[13px] font-normal">Configuration Viewer</span>
+          )}
+        </h2>
+
+        <div className="flex gap-3 items-center">
+          {plan && (
+            <>
+              <input type="file" accept=".json" onChange={handleFileUpload} disabled={loading} className="hidden" id="file-upload" />
+              <select
+                value={selectedSuiteIndex}
+                onChange={(e) => setSelectedSuiteIndex(Number(e.target.value))}
+                className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]"
+              >
+                {plan.cluster_plans.map((suite, index) => (
+                    <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>
+                ))}
+              </select>
+            </>
+          )}
+          <button className="py-2 px-5 bg-transparent text-[#4CAF50] border border-[#4CAF50] rounded-md cursor-pointer text-[13px] font-bold flex items-center gap-1.5">
+            <span>&#9655;</span> Run Optimization
+          </button>
+        </div>
       </div>
 
-      {plan && currentSuite ? (
-        <div>
-          {/* Controls: Suite Dropdown */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ marginRight: '10px', fontWeight: 'bold' }}>Select Suite:</label>
-            <select 
-              value={selectedSuiteIndex} 
-              onChange={(e) => setSelectedSuiteIndex(Number(e.target.value))}
-              style={{ padding: '8px', fontSize: '16px', borderRadius: '4px' }}
-            >
-              {plan.cluster_plans.map((suite, index) => (
-                  <option key={index} value={index}>
-                    {suite.datacenter} - {suite.suite}
-                  </option>
-              ))}
-            </select>
-          </div>
-          
-          {/* --- NEW METRICS PANEL --- */}
-          <MetricsPanel suite={currentSuite} />
-          {/* ------------------------- */}
+      {/* Main Content Area */}
+      <div>
+        {error && <div className="text-red-500 mb-5 text-center">{error}</div>}
 
-          <DataCentreGrid 
-            title={`Visual Layout: ${currentSuite.datacenter} - ${currentSuite.suite}`}
-            grid={parsePositionsToGrid(currentSuite.positions)}
-          />
-        </div>
-      ) : (
-        !loading && <p>Please upload a plan to see the visualization.</p>
-      )}
+        {plan && currentSuite && grid ? (
+          <div className="flex gap-6 items-start">
+            <div className="flex-1 bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35] min-w-0">
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                <div className="text-xs text-[#666]">{rows} rows &times; {cols} positions</div>
+              </div>
+              <DataCentreGrid
+                title=""
+                grid={grid}
+              />
+            </div>
+            <Sidebar suite={currentSuite} />
+          </div>
+        ) : (
+          !loading && (
+            <div className="flex flex-col items-center justify-center mt-20 p-[60px_20px] bg-[#1a1d24] rounded-xl border border-dashed border-[#444] max-w-[600px] mx-auto">
+              <div className="text-5xl mb-5">📁</div>
+              <h3 className="m-0 mb-2.5 text-[#E0E0E0] text-xl">No Suite Configuration Loaded</h3>
+              <p className="text-[#888] mb-7 text-center text-sm leading-relaxed">
+                Upload a data centre layout file (.json) to visualize the rack configuration, <br/>
+                compute capacity, and power distribution.
+              </p>
+
+              <label className="bg-[#4A90E2] text-white py-3 px-6 rounded-md cursor-pointer font-bold text-sm transition-colors duration-200 hover:bg-[#3a7bd5]">
+                Choose JSON File
+                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+              </label>
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 }
