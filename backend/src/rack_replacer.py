@@ -1,8 +1,8 @@
 import json
 from datetime import datetime, timezone
 from typing import List, Optional
-from model.position import Position
-from model.rack import Rack
+from src.model.position import Position
+from src.model.rack import Rack
 
 class RackReplacer:
     
