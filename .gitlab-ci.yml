@@ -3,6 +3,8 @@ stages:
 
 build_image:
   stage: build
+  tags:
+    - docker
   image: docker:27
   services:
     - docker:27-dind
