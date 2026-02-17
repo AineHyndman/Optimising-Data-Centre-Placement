@@ -1,10 +1,10 @@
 import json
 from typing import List
 
-from Emergency import EmergencyPower
-from rows import Row
+from src.Emergency import EmergencyPower
+from src.model.rows import Row
 
-with open("suite.json", "r") as f:
+with open("src/json/suite.json", "r") as f:
     suite_data = json.load(f)
 
 

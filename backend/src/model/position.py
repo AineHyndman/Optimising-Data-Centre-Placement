@@ -1,6 +1,6 @@
 from typing import Optional
 
-from model.rack import Rack
+from src.model.rack import Rack
 
 
 class Position:
