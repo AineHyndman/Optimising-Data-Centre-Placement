@@ -2,7 +2,7 @@ from dataclasses import replace
 from typing import Callable, Dict, List
 
 from .actions import Action
-from ..models import Day, SuiteState
+from .models import Day, SuiteState
 
 
 class SimulationEngine:

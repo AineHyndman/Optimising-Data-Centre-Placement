@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Callable
 
-from models import Position, Rack, RackId, SuiteState
+from backend.simulation_engine.models import Position, Rack, RackId, SuiteState
 
 Action = Callable[[SuiteState], SuiteState]
 
