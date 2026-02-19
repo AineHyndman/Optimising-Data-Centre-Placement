@@ -24,7 +24,7 @@ class Rack:
         if rack is None:
             raise ValueError("Not valid code")
 
-        if self.code is "":
+        if self.code == "":
             self.empty = True
 
         # Change the variables to their correct values
