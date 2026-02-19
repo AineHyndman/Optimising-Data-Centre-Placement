@@ -1,6 +1,6 @@
 import json
 # Opens "racks.json" as a readable file
-with open("src/json/racks.json", "r") as rackfile:
+with open("src/utils/json/racks.json", "r") as rackfile:
     # Build a dictionary with Codes for keys
     racks = {r["Code"]: r for r in json.load(rackfile)}
 

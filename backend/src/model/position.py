@@ -25,18 +25,6 @@ class Position:
             f"Rack={self.rack})"
         )
 
-    def removeRack(self):
-        if self.rack is not None:
-            self.rack = None
-        else:
-            raise ValueError("Rack is already empty.")
-
-    def addRack(self, rack):
-        if self.rack is None:
-            self.rack = rack
-        else:
-            raise ValueError(f"There is already a {self.rack} rack.")
-
     def getRack(self):
         return self.rack
 

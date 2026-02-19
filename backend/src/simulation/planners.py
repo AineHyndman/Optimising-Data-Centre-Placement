@@ -1,8 +1,9 @@
 from typing import List
+import sys
 
 from dataclasses import replace as dc_replace
-from src.simulation_engine.actions import Action
-from src.simulation_engine.models import SuiteState, Rack
+from src.simulation.actions import Action
+from src.domain.models import SuiteState, Rack
 from typing import Tuple
 
 ##def replace_rack(state: SuiteState, position: Tuple[int,int], new_rack: Rack) -> SuiteState:

@@ -1,8 +1,8 @@
 from dataclasses import replace
 from typing import Callable, Dict, List
-
 from .actions import Action
-from .models import Day, SuiteState
+from src.domain.models import Day, SuiteState
+from src.simulation.tasks.rack_replacer import RackReplacer
 
 
 class SimulationEngine:
@@ -10,6 +10,7 @@ class SimulationEngine:
         self.history: Dict[Day, SuiteState] = {initial_state.day: initial_state}
         self.current_day = initial_state.day
         self.current_state = initial_state
+        self.rack_replacer = RackReplacer()
 
     def step(self, actions: List[Action]) -> SuiteState:
         state = self.current_state

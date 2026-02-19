@@ -1,7 +1,11 @@
 from dataclasses import replace
-from typing import Callable
+from typing import Callable, Tuple
 
-from models import Position, Rack, RackId, SuiteState
+from src.domain.models import SuiteState, Rack, RackId
+
+
+PositionKey = Tuple[int, int]
+
 
 Action = Callable[[SuiteState], SuiteState]
 
@@ -17,12 +21,13 @@ def remove_rack(rack_id: RackId) -> Action:
                 break
 
         new_racks.pop(rack_id, None)
+
         return replace(state, positions=new_positions, racks=new_racks)
 
     return _action
 
 
-def move_rack(rack_id: RackId, new_pos: Position) -> Action:
+def move_rack(rack_id: RackId, new_pos: PositionKey) -> Action:
     def _action(state: SuiteState) -> SuiteState:
         new_positions = dict(state.positions)
 
@@ -36,10 +41,11 @@ def move_rack(rack_id: RackId, new_pos: Position) -> Action:
                 break
 
         if old_pos is None:
+            
             return state
 
         if new_positions.get(new_pos) is not None:
-            raise ValueError("Target position occupied")
+            raise ValueError(f"Target position {new_pos} is occupied")
 
         new_positions[old_pos] = None
         new_positions[new_pos] = rack_obj
@@ -49,10 +55,10 @@ def move_rack(rack_id: RackId, new_pos: Position) -> Action:
     return _action
 
 
-def add_rack(rack: Rack, pos: Position) -> Action:
+def add_rack(rack: Rack, pos: PositionKey) -> Action:
     def _action(state: SuiteState) -> SuiteState:
         if state.positions.get(pos) is not None:
-            raise ValueError("Position occupied")
+            raise ValueError(f"Position {pos} is already occupied")
 
         new_positions = dict(state.positions)
         new_racks = dict(state.racks)

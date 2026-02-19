@@ -2,12 +2,10 @@ import json
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from src.simulation_engine.engine import SimulationEngine
+from src.simulation.engine import SimulationEngine
 from copy import deepcopy
-from src.simulation_engine.models import Position
-from src.simulation_engine.models import Rack
+from src.domain.models import Position, Rack, PlanData, SuitePlan, SuiteState
 
-from src.simulation_engine.models import PlanData, SuitePlan, SuiteState
 #from src.simulation_engine.planners import example_planner
 
 app = FastAPI()

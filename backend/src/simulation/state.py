@@ -1,20 +1,11 @@
 from collections import Counter
 from dataclasses import dataclass, replace
 from typing import Dict, Tuple
+from src.model.rack import Rack
 
 Position = Tuple[int, int]
 RackId = str
 Day = int
-
-
-@dataclass(frozen=True)
-class Rack:
-    rack_id: RackId
-    generation: str
-    rack_type: str
-    service: str
-    year: int
-
 
 @dataclass(frozen=True)
 class SuiteState:

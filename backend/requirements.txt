@@ -56,4 +56,7 @@ typing-inspection==0.4.2
 uvicorn==0.40.0
     # via -r requirements.in
 
-python-multipart
+python-multipart==0.0.22
+    # via
+    # -r requirements.in
+    #
