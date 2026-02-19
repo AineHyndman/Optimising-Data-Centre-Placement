@@ -12,12 +12,6 @@ class SimulationEngine:
         self.current_state = initial_state
         self.rack_replacer = RackReplacer()
 
-    def __call__(self,state: SuiteState) -> SuiteState:
-        new_positions = state.positions.copy()
-        new_racks = state.racks.copy()
-
-        return replace(state, positions=new_positions, racks=new_racks)
-
     def step(self, actions: List[Action]) -> SuiteState:
         state = self.current_state
 
