@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from src.model.position import Position
 from src.model.rack import Rack
+from src.simulation_engine.models import SuiteState
+from src.simulation_engine.models import Rack
+from dataclasses import replace
 
 class RackReplacer:
     
@@ -20,46 +23,46 @@ class RackReplacer:
         self.net_power_change = 0.0
 
         self.history: List[dict] = []
+    
+    def __call__(self, state: SuiteState) -> SuiteState:
+        return self.replace_multiple(state)
 
     def is_valid_rack(self, rack: Optional[Rack]) -> bool:
         return rack is not None and rack.code in self.REPLACEMENT_MAP
 
-    def replace_rack_at_position(
-        self, position: Position, constraint_checker=None
-    ):
+    def replace_rack_at_position(self, state: SuiteState, pos: Position):
         
         if self.racks_changed >= self.max_moves_per_day:
-            return False  
+            return state
 
-        rack = position.getRack()
-        if not self.is_valid_rack(rack):
-            return False
+        rack = state.positions[pos]
 
-        old_code = rack.code
+        if rack is None or rack.rack_type.lower() not in self.REPLACEMENT_MAP:
+            return state
+
+        old_code = rack.rack_type.lower()
         new_code = self.REPLACEMENT_MAP[old_code]
 
-        new_rack = Rack(new_code)
+        new_rack = Rack(
+            rack_id=rack.rack_id,
+            generation=new_code,
+            rack_type=new_code,
+            service=rack.service,
+            year=2025,
+            color=rack.color
+        )
 
-        if constraint_checker:
-            temp_position_rack = position.getRack()
-            position.removeRack()
-            position.addRack(new_rack)
-            if not constraint_checker.is_valid():
-                position.removeRack()
-                position.addRack(temp_position_rack)
-                return False
+        new_positions = dict(state.positions)
+        new_racks = dict(state.racks)
 
-        else:
-            position.removeRack()
-            position.addRack(new_rack)
+        new_positions[pos] = new_rack
+        new_racks[rack.rack_id] = new_rack
 
         self.racks_changed += 1
-        self.net_RSU_change += new_rack.capacity - rack.capacity
-        self.net_power_change += new_rack.powerNeed - rack.powerNeed
 
-        self._record_change(position, old_code, new_code)
+        self._record_change(pos,old_code,new_code)
 
-        return True
+        return replace(state, positions=new_positions, racks=new_racks)
 
     def _record_change(self, position: Position, old_code: str, new_code: str):
         self.history.append({
@@ -95,11 +98,10 @@ class RackReplacer:
         self.net_RSU_change = 0.0
         self.net_power_change = 0.0
 
-    def replace_multiple(self, positions: List[Position], constraint_checker=None):
-        replaced = 0
-        for pos in positions:
+    def replace_multiple(self, state: SuiteState) -> SuiteState:
+        for pos in state.positions.keys():
             if self.racks_changed >= self.max_moves_per_day:
                 break
-            if self.replace_rack_at_position(pos, constraint_checker):
-                replaced += 1
-        return replaced
+            state = self.replace_rack_at_position(state,pos)
+
+        return state
