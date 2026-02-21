@@ -12,6 +12,7 @@ class EmergencyPower:
     def available_days(self) -> int:
         return 0 if self.cooldown else 7 - self.days
 
+    # should be moved to engine or planners
     def progress(self):
         if self.active and not self.cooldown:
             self.days += 1

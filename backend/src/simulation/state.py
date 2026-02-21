@@ -21,10 +21,8 @@ class EmergencyState:
     active: bool = False
     cooldown: bool = False
 
-    def available_days(self) -> int:
-        return 0 if self.cooldown else 7 - self.days
-
-
+    def available_days(self) -> int: # t4ested
+        return 0 if self.cooldown else 7 - self.emergency_days
 
 @dataclass(frozen=True)
 class SuiteState:
@@ -33,26 +31,26 @@ class SuiteState:
     racks: Dict[RackId, Rack]
     emergencyState: EmergencyState()
 
-    def get_generation_counts(self):
-        return Counter(r.generation for r in self.racks.values())
+    def get_generation_counts(self): # tested
+        return Counter(r.generation for r in self.positions.values() if r.generation != 0)
 
-    def get_type_counts(self):
-        return Counter(r.rack_type for r in self.racks.values())
+    def get_type_counts(self): # tested
+        return Counter(r.type for r in self.positions.values())
 
-    def get_empty_positions(self):
-        return [p for p, r in self.positions.items() if r is None]
+    def get_empty_positions(self): # tested
+        return sum(1 for r in self.positions.values() if r.generation == 0)
 
-    def get_row_distribution(self):
-        rows = Counter()
-        for (row, _), rack in self.positions.items():
-            if rack:
-                rows[row] += 1
-        return dict(rows)
+    """
+    Below uses int for key instead of the string, like it is int rows.json, might change later if needed
+    """
+    def get_row_distribution(self): # tested
+        return Counter(pos[1] for pos in self.positions if self.positions[pos].generation != 0)
 
-    def get_2023_count(self):
+
+    def get_2023_count(self): # tested
         return sum(1 for r in self.positions.values() if r.generation == 2023)
 
-    def get_rsu_per_service(self):
+    def get_rsu_per_service(self): # tested
         temp = {}
         for r in self.positions.values():
             temp[r.type] = round(temp.get(r.type, 0) + r.capacity, 2)
@@ -61,11 +59,8 @@ class SuiteState:
     """
     New Functions, migrating from Suite class
     """
-    def test(self):
-        for rack in self.racks.values():
-            print(rack)
 
-    def total_power_kw(self) -> int:
+    def total_power_kw(self) -> int: # tested
         return sum(r.powerNeed for r in self.positions.values())
     
 
@@ -87,21 +82,27 @@ def myTest():
         x = 0
         for rack in row["Positions"]:
             testRack[rack] = Rack(rack)
-            #print(testRack[rack])
             my_tuple = (x, y)
             testPos[my_tuple] = testRack[rack]
             x += 1
         y += 1
 
-    #print(testPos)
 
-    testEmergency = EmergencyState()
+    testEmergency = EmergencyState(0, 0, False, False)
     testSuite = SuiteState(0, testPos, testRack, testEmergency)
 
-    #testSuite.test()
+    # Testing all functions in suitestate
     print(testSuite.get_2023_count())
     print(testSuite.total_power_kw())
     print(testSuite.get_rsu_per_service())
+    print(testSuite.get_generation_counts())
+    print(testSuite.get_type_counts())
+    print(testSuite.get_empty_positions())
+    print(testSuite.get_row_distribution())
+
+    # Testing EmergencyState
+    print(testEmergency.available_days())
+
 
 
 
