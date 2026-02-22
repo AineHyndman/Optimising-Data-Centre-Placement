@@ -10,6 +10,8 @@ function App() {
   const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  // NEW STATE FOR HEATMAP TOGGLE
+  const [viewMode, setViewMode] = useState<'type' | 'power'>('type');
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -88,16 +90,41 @@ function App() {
         {plan && currentSuite && grid ? (
           <div className="flex gap-6 items-start">
             <div className="flex-1 bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35] min-w-0">
+              
+              {/* SUITE LAYOUT HEADER WITH TOGGLE BUTTONS */}
               <div className="flex justify-between items-center mb-4">
-                <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
-                <div className="text-xs text-[#666]">{rows} rows &times; {cols} positions</div>
+                <div>
+                  <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                  <div className="text-xs text-[#666]">{rows} rows &times; {cols} positions</div>
+                </div>
+                
+                <div className="flex bg-[#0f1115] rounded-md p-1 border border-[#333]">
+                  <button 
+                    onClick={() => setViewMode('type')}
+                    className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'type' ? 'bg-[#4A90E2] text-white' : 'text-[#888] hover:text-[#ccc]'}`}
+                  >
+                    Rack View
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('power')}
+                    className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'power' ? 'bg-[#F44336] text-white' : 'text-[#888] hover:text-[#ccc]'}`}
+                  >
+                    Power Heatmap
+                  </button>
+                </div>
               </div>
+
+              {/* UPDATED GRID CALL */}
               <DataCentreGrid
                 title=""
                 grid={grid}
+                viewMode={viewMode}
+                rackTypes={plan.rack_types}
               />
             </div>
-            <Sidebar suite={currentSuite} />
+            
+            {/* UPDATED SIDEBAR CALL */}
+            <Sidebar suite={currentSuite} viewMode={viewMode} />
           </div>
         ) : (
           !loading && (
