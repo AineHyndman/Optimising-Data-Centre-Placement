@@ -54,7 +54,7 @@ class SuiteState:
         temp = {}
         for r in self.positions.values():
             temp[r.type] = round(temp.get(r.type, 0) + r.capacity, 2)
-        return temp
+        return dict(temp)
     
     """
     New Functions, migrating from Suite class
@@ -65,7 +65,8 @@ class SuiteState:
     
 
 
-#just a test
+#just a test, uncomment if you want to test it
+"""
 def myTest():
     x = 0
     y = 0
@@ -88,7 +89,7 @@ def myTest():
         y += 1
 
 
-    testEmergency = EmergencyState(0, 0, False, False)
+    testEmergency = EmergencyState()
     testSuite = SuiteState(0, testPos, testRack, testEmergency)
 
     # Testing all functions in suitestate
@@ -107,3 +108,4 @@ def myTest():
 
 
 myTest()
+"""
