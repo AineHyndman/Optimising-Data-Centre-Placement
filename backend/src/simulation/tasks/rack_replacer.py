@@ -99,7 +99,17 @@ class RackReplacer:
     Rack replacer which prioritises removing racks to go under emergency threshold
     """
     def emergency_replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints) {
+        if self.racks_changed >= self.max_moves_per_day:
+            return state
+
+        rack = state.positions[pos]
+
+        if rack is None or rack.code not in self.REPLACEMENT_MAP:
+            return state
         
+        new_rack = Rack("")
+
+        return replace(state, positions=new_positions, racks=new_racks)
     }
 
 
