@@ -1,9 +1,13 @@
 import React from 'react';
 import type { Grid } from './utils';
+import type { RackSpec } from './types';
+import { powerToColor } from './utils';
 
 interface DataCentreGridProps {
   grid: Grid;
   title: string;
+  viewMode?: 'type' | 'power';
+  rackTypes?: RackSpec[];
 }
 
 const cellColorMap: Record<string, string> = {
@@ -12,16 +16,41 @@ const cellColorMap: Record<string, string> = {
   A: 'bg-[#BD10E0]',
 };
 
-export const DataCentreGrid: React.FC<DataCentreGridProps> = ({ grid, title }) => {
-  const getCellClasses = (value: string | null) => {
-    if (!value) return 'bg-transparent border border-[#2a2d35]';
+export const DataCentreGrid: React.FC<DataCentreGridProps> = ({ 
+  grid, 
+  title, 
+  viewMode = 'type', 
+  rackTypes = [] 
+}) => {
+  const maxPower = rackTypes.length > 0 
+    ? Math.max(...rackTypes.map(r => r.power_need)) 
+    : 1;
+
+  const getCellData = (value: string | null) => {
+    if (!value) return { classes: 'bg-transparent border border-[#2a2d35]', title: '', content: '' };
+
     const type = value.charAt(0).toUpperCase();
-    return `${cellColorMap[type] || 'bg-[#ccc]'} border border-white/[0.08]`;
+    const rackSpec = rackTypes.find(r => r.type === type);
+    const power = rackSpec ? rackSpec.power_need : 0;
+    
+    if (viewMode === 'power') {
+      const intensity = power / maxPower;
+      return {
+        classes: `${powerToColor(intensity)} border border-white/[0.08]`,
+        title: `${power} kW`,
+        content: value
+      };
+    }
+
+    return {
+      classes: `${cellColorMap[type] || 'bg-[#ccc]'} border border-white/[0.08] text-white`,
+      title: '', 
+      content: value
+    };
   };
 
   const rows = grid.length;
   const cols = grid[0]?.length || 0;
-
   const isEmptyRow = (rowIndex: number) => grid[rowIndex].every(cell => cell === null);
 
   return (
@@ -56,15 +85,22 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({ grid, title }) =
                 <td className="text-[11px] text-[#555] font-mono pr-1.5 text-right whitespace-nowrap">
                   R{rowIndex.toString().padStart(2, '0')}
                 </td>
-                {grid[rowIndex].map((cellValue, colIndex) => (
-                  <td
-                    key={colIndex}
-                    className={`text-center text-[10px] font-bold py-1.5 px-0.5 rounded-sm ${getCellClasses(cellValue)} ${cellValue ? 'text-white' : 'text-transparent'}`}
-                    title={`Row: R${rowIndex.toString().padStart(2, '0')}, Col: P${colIndex}`}
-                  >
-                    {cellValue || ''}
-                  </td>
-                ))}
+                {grid[rowIndex].map((cellValue, colIndex) => {
+                  const cellData = getCellData(cellValue);
+                  const hoverTitle = viewMode === 'power' && cellValue 
+                    ? cellData.title 
+                    : `Row: R${rowIndex.toString().padStart(2, '0')}, Col: P${colIndex}`;
+
+                  return (
+                    <td
+                      key={colIndex}
+                      className={`text-center text-[10px] font-bold py-1.5 px-0.5 rounded-sm ${cellData.classes}`}
+                      title={hoverTitle}
+                    >
+                      {cellData.content}
+                    </td>
+                  );
+                })}
               </tr>
             );
           })}

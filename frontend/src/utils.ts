@@ -53,3 +53,14 @@ export function validatePlan(data: unknown): data is ClusterPlan {
   }
   return true;
 }
+
+/**
+ * Returns a Tailwind background color class based on power intensity (0 to >1)
+ */
+export function powerToColor(intensity: number): string {
+  if (intensity <= 0.4) return 'bg-[#4CAF50] text-black'; 
+  if (intensity <= 0.7) return 'bg-[#FFEB3B] text-black'; 
+  if (intensity <= 0.9) return 'bg-[#FF9800] text-black'; 
+  if (intensity <= 1.0) return 'bg-[#F44336] text-white'; 
+  return 'bg-[#B71C1C] text-white'; 
+}

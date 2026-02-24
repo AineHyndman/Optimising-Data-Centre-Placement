@@ -3,9 +3,10 @@ import type { SuitePlan } from './types';
 
 interface SidebarProps {
   suite: SuitePlan;
+  viewMode?: 'type' | 'power';
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ suite }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ suite, viewMode = 'type' }) => {
   const stats = useMemo(() => {
     let counts = { compute: 0, storage: 0, ai: 0, totalRacks: 0 };
     suite.positions.forEach(pos => {
@@ -103,12 +104,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ suite }) => {
       {/* Legend */}
       <div className="bg-[#1a1d24] py-4 px-5 rounded-lg border border-[#2a2d35]">
         <div className="text-[11px] text-[#888] uppercase tracking-wider mb-3 font-bold">Legend</div>
-        <div className="grid grid-cols-2 gap-3 text-[13px] text-[#aaa]">
-          <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#4A90E2] rounded-sm"></div> Compute</div>
-          <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#50E3C2] rounded-sm"></div> Storage</div>
-          <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#BD10E0] rounded-sm"></div> AI</div>
-          <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 border border-[#555] rounded-sm"></div> Empty</div>
-        </div>
+        {viewMode === 'type' ? (
+          <div className="grid grid-cols-2 gap-3 text-[13px] text-[#aaa]">
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#4A90E2] rounded-sm"></div> Compute</div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#50E3C2] rounded-sm"></div> Storage</div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#BD10E0] rounded-sm"></div> AI</div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 border border-[#555] rounded-sm"></div> Empty</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 text-[13px] text-[#aaa]">
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#4CAF50] rounded-sm"></div> 0 - 40%</div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#FFEB3B] rounded-sm"></div> 40 - 70%</div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#FF9800] rounded-sm"></div> 70 - 90%</div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#F44336] rounded-sm"></div> 90 - 100%</div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-[#B71C1C] rounded-sm"></div> &gt; 100%</div>
+          </div>
+        )}
       </div>
 
       {/* Power By Row */}
