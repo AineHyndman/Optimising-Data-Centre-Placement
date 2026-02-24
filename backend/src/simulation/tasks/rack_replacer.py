@@ -3,8 +3,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from src.model.position import Position
 from src.model.rack import Rack
-from src.domain.models import SuiteState
-from src.domain.models import Rack
+from src.simulation.models import SuiteState
 from dataclasses import replace
 from src.simulation.constraints import Constraints
 
