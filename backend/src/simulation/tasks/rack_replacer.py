@@ -63,12 +63,14 @@ class RackReplacer:
         old_code = rack.code
         new_code = self.REPLACEMENT_MAP[old_code]
 
-        # NEW
         new_rack = Rack(new_code)
 
         if state.total_power_kw() + new_rack.powerNeed > constraint.allowed_power_kw():
             return state
 
+        """
+        checks which type we are dealing with and makes sure no limits are surpassed
+        """
         match new_rack.type:
             case "Compute":
                 if state.get_rsu_per_service()["Compute"] + new_rack.capacity - rack.capacity > constraint.compute_max:
@@ -98,7 +100,7 @@ class RackReplacer:
 
 
     """
-    Rack replacer which prioritises removing racks to go under emergency threshold
+    Rack replacer which prioritises removing racks to go under emergency threshold, mostly just a copy of the one above
     """
     def emergency_replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints):
         print("emergency")
@@ -114,6 +116,7 @@ class RackReplacer:
         new_code = ""
         
         new_rack = Rack("")
+
 
         match rack.type:
             case "Compute":
@@ -216,6 +219,9 @@ class RackReplacer:
         self.AI_RSU_change = 0.0
 
     def replace_multiple(self, state: SuiteState, constraint: Constraints) -> SuiteState:
+        """
+        Added a second version of the loop, one for regular and one for emergency power handling
+        """
         if state.emergencyState.available_days() > 1 and not state.emergencyState.cooldown:
             for pos in state.positions.keys():
                 #print(pos)
