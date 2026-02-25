@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Grid } from './utils';
 import type { RackSpec } from './types';
 import { powerToColor } from './utils';
@@ -8,7 +8,6 @@ interface DataCentreGridProps {
   title: string;
   viewMode?: 'type' | 'power';
   rackTypes?: RackSpec[];
-  onMove?: (fromRow: number, fromCol: number, toRow: number, toCol: number) => void;
 }
 
 const cellColorMap: Record<string, string> = {
@@ -17,44 +16,14 @@ const cellColorMap: Record<string, string> = {
   A: 'bg-[#BD10E0]',
 };
 
-export const DataCentreGrid: React.FC<DataCentreGridProps> = ({ 
-  grid, 
-  title, 
-  viewMode = 'type', 
+export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
+  grid,
+  title,
+  viewMode = 'type',
   rackTypes = [],
-  onMove
 }) => {
-  const [dragOverCell, setDragOverCell] = useState<{row: number, col: number} | null>(null);
-
   // Find the highest power rack to normalize the heatmap scale
   const maxPower = rackTypes.length > 0 ? Math.max(...rackTypes.map(r => r.power_need)) : 1;
-
-  const handleDragStart = (e: React.DragEvent, row: number, col: number, type: string) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify({ row, col, type }));
-  };
-
-  const handleDragOver = (e: React.DragEvent, row: number, col: number) => {
-    e.preventDefault();
-    setDragOverCell({ row, col });
-  };
-
-  const handleDragLeave = () => setDragOverCell(null);
-
-  const handleDrop = (e: React.DragEvent, toRow: number, toCol: number, targetValue: string | null) => {
-    e.preventDefault();
-    setDragOverCell(null);
-    if (targetValue !== null) return; 
-    
-    try {
-      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-      if (onMove && (data.row !== toRow || data.col !== toCol)) {
-        onMove(data.row, data.col, toRow, toCol);
-      }
-    } catch {
-      console.error("Failed to parse drag data");
-    }
-  };
 
   const getCellData = (value: string | null) => {
     if (!value) return { classes: 'bg-transparent border border-[#2a2d35]', title: '', content: '' };
@@ -62,7 +31,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
     const typeKey = value.charAt(0).toUpperCase();
     const rackSpec = rackTypes.find(r => r.type.charAt(0).toUpperCase() === typeKey);
     const power = rackSpec ? rackSpec.power_need : 0;
-    
+
     if (viewMode === 'power') {
       const intensity = power / maxPower;
       return {
@@ -74,7 +43,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
 
     return {
       classes: `${cellColorMap[typeKey] || 'bg-[#ccc]'} border border-white/10 text-white`,
-      title: '', 
+      title: '',
       content: value
     };
   };
@@ -97,7 +66,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
             ))}
           </tr>
         </thead>
-        <tbody onDragLeave={handleDragLeave}>
+        <tbody>
           {Array.from({ length: rows }).map((_, rowIndex) => {
             if (isEmptyRow(rowIndex)) {
               return (
@@ -115,24 +84,11 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
                 </td>
                 {grid[rowIndex].map((cellValue, colIndex) => {
                   const cellData = getCellData(cellValue);
-                  const isDragOver = dragOverCell?.row === rowIndex && dragOverCell?.col === colIndex;
-                  
-                  let dragStyles = '';
-                  if (isDragOver) {
-                    dragStyles = cellValue === null 
-                      ? 'ring-2 ring-green-500 ring-inset z-10 relative' 
-                      : 'ring-2 ring-red-500 ring-inset z-10 relative bg-red-500/20';
-                  }
 
                   return (
                     <td
                       key={colIndex}
-                      draggable={cellValue !== null}
-                      onDragStart={(e) => cellValue && handleDragStart(e, rowIndex, colIndex, cellValue)}
-                      onDragEnd={() => setDragOverCell(null)}
-                      onDragOver={(e) => handleDragOver(e, rowIndex, colIndex)}
-                      onDrop={(e) => handleDrop(e, rowIndex, colIndex, cellValue)}
-                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all ${cellValue ? 'cursor-grab active:cursor-grabbing' : ''} ${cellData.classes} ${dragStyles}`}
+                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all ${cellData.classes}`}
                       title={viewMode === 'power' && cellValue ? cellData.title : `Row: R${rowIndex}, Col: P${colIndex}`}
                     >
                       {cellData.content}
