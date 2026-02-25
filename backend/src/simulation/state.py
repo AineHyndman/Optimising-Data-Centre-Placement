@@ -5,8 +5,10 @@ from collections import Counter
 from dataclasses import dataclass, replace
 from typing import Dict, Tuple
 from src.model.rack import Rack
+from src.model.position import Position
 
-Position = Tuple[int, int]
+
+#Position = Tuple[int, int]
 RackId = str
 Day = int
 
@@ -21,7 +23,7 @@ class EmergencyState:
     active: bool = False
     cooldown: bool = False
 
-    def available_days(self) -> int: # t4ested
+    def available_days(self) -> int: # tested
         return 0 if self.cooldown else 7 - self.emergency_days
 
 @dataclass(frozen=True)
@@ -44,7 +46,7 @@ class SuiteState:
     Below uses int for key instead of the string, like it is int rows.json, might change later if needed
     """
     def get_row_distribution(self): # tested
-        return Counter(pos[1] for pos in self.positions if self.positions[pos].generation != 0)
+        return Counter(pos.row for pos in self.positions if self.positions[pos].generation != 0)
 
 
     def get_2023_count(self): # tested
@@ -64,9 +66,8 @@ class SuiteState:
         return sum(r.powerNeed for r in self.positions.values())
     
 
-
-#just a test, uncomment if you want to test it
 """
+#just a test, uncomment if you want to test it
 def myTest():
     x = 0
     y = 0
@@ -84,7 +85,7 @@ def myTest():
         for rack in row["Positions"]:
             testRack[rack] = Rack(rack)
             my_tuple = (x, y)
-            testPos[my_tuple] = testRack[rack]
+            testPos[Position(suite=0, row=y, position=x)] = testRack[rack]
             x += 1
         y += 1
 

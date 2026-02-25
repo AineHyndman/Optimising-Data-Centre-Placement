@@ -4,7 +4,7 @@ from typing import List
 from src.Emergency import EmergencyPower
 from src.model.rows import Row
 
-with open("src/json/suite.json", "r") as f:
+with open("src/utils/json/suite.json", "r") as f:
     suite_data = json.load(f)
 
 
