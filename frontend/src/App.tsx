@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import './App.css';
-import type { ClusterPlan, RackSpec } from './types';
+import type { ClusterPlan } from './types';
 import { parsePositionsToGrid, type Grid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
 import { Sidebar } from './Sidebar';
@@ -8,8 +8,8 @@ import { Sidebar } from './Sidebar';
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
   const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0);
-  const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [, setError] = useState<string>('');
+  const [, setLoading] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string>('');
   const [viewMode, setViewMode] = useState<'type' | 'power'>('type');
   const [plannedMoves, setPlannedMoves] = useState<{from: [number,number], to: [number,number], rackType: string}[]>([]);
@@ -29,7 +29,7 @@ function App() {
       if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
       const json = await response.json();
       setPlan(json);
-    } catch (err) {
+    } catch {
       setError('Failed to process file. Is Docker running?');
     } finally {
       setLoading(false);

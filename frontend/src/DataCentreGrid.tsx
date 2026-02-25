@@ -51,7 +51,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
       if (onMove && (data.row !== toRow || data.col !== toCol)) {
         onMove(data.row, data.col, toRow, toCol);
       }
-    } catch (err) {
+    } catch {
       console.error("Failed to parse drag data");
     }
   };

@@ -11,7 +11,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode = 'type', rackTypes = [] }) => {
   const stats = useMemo(() => {
-    let counts = { compute: 0, storage: 0, ai: 0, totalRacks: 0 };
+    const counts = { compute: 0, storage: 0, ai: 0, totalRacks: 0 };
     suite.positions.forEach(pos => {
       if (!pos.rack_type) return;
       counts.totalRacks++;
