@@ -1,0 +1,33 @@
+#!/bin/sh
+# Pre-push hook: auto-fix ESLint issues and verify the build passes before pushing.
+# Installed automatically when you run `npm install` in the frontend/ directory.
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+FRONTEND="$REPO_ROOT/frontend"
+
+echo "==> [pre-push] Running frontend checks..."
+
+cd "$FRONTEND" || exit 1
+
+# Auto-fix anything ESLint can fix
+npm run lint:fix
+
+# Stage any files that were auto-fixed so they are included in the push
+git add -u
+
+# Check lint (catches errors that --fix can't resolve automatically)
+npm run lint
+LINT_STATUS=$?
+
+# Check TypeScript + build
+npm run build
+BUILD_STATUS=$?
+
+if [ $LINT_STATUS -ne 0 ] || [ $BUILD_STATUS -ne 0 ]; then
+  echo ""
+  echo "==> [pre-push] Checks failed. Fix the errors above, commit the changes, then push again."
+  exit 1
+fi
+
+echo "==> [pre-push] All checks passed."
+exit 0

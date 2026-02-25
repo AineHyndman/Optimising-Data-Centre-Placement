@@ -3,11 +3,13 @@ import type { Position, Constraints, SuitePlan, RackSpec } from './types';
 const ROWS = 48;
 const COLS = 16;
 
-export function createEmptyGrid() {
-  return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+export type Grid = (string | null)[][];
+
+export function createEmptyGrid(): Grid {
+  return Array.from({ length: ROWS }, () => Array<string | null>(COLS).fill(null));
 }
 
-export function parsePositionsToGrid(positions: Position[]) {
+export function parsePositionsToGrid(positions: Position[]): Grid {
   const grid = createEmptyGrid();
   positions.forEach((pos) => {
     const rowIdx = parseInt(pos.row, 10);
