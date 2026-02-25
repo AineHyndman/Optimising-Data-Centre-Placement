@@ -57,7 +57,7 @@ function App() {
       let total = 0;
       g.forEach(row => row.forEach(cell => {
         if (cell) {
-          const spec = plan.rack_types.find(r => r.name === cell);
+          const spec = plan.rack_types.find(r => r.type.charAt(0).toUpperCase() === cell.charAt(0).toUpperCase());
           total += spec?.power_need || 0;
         }
       }));

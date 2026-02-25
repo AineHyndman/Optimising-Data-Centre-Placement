@@ -49,7 +49,10 @@ export function computeViolations(suite: SuitePlan, constraints: Constraints, ra
 
   if (actualCompute < constraints.compute_range.min) violations.push(`Compute RSU ${actualCompute.toFixed(1)} < ${constraints.compute_range.min}`);
   if (actualCompute > constraints.compute_range.max) violations.push(`Compute RSU ${actualCompute.toFixed(1)} > ${constraints.compute_range.max}`);
+  if (actualStorage < constraints.storage_range.min) violations.push(`Storage RSU ${actualStorage.toFixed(1)} < ${constraints.storage_range.min}`);
+  if (actualStorage > constraints.storage_range.max) violations.push(`Storage RSU ${actualStorage.toFixed(1)} > ${constraints.storage_range.max}`);
+  if (actualAi < constraints.ai_range.min) violations.push(`AI RSU ${actualAi.toFixed(1)} < ${constraints.ai_range.min}`);
+  if (actualAi > constraints.ai_range.max) violations.push(`AI RSU ${actualAi.toFixed(1)} > ${constraints.ai_range.max}`);
   if (actualPower > constraints.power_budget) violations.push(`Power ${Math.round(actualPower)} kW > budget ${constraints.power_budget} kW`);
-  // ... add other checks as needed
   return violations;
 }

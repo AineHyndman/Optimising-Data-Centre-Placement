@@ -30,7 +30,8 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
   const maxPower = rackTypes.length > 0 ? Math.max(...rackTypes.map(r => r.power_need)) : 1;
 
   const handleDragStart = (e: React.DragEvent, row: number, col: number, type: string) => {
-    e.dataTransfer.setData('application/json', JSON.stringify({ row, col, type }));
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ row, col, type }));
   };
 
   const handleDragOver = (e: React.DragEvent, row: number, col: number) => {
@@ -46,7 +47,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
     if (targetValue !== null) return; 
     
     try {
-      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
       if (onMove && (data.row !== toRow || data.col !== toCol)) {
         onMove(data.row, data.col, toRow, toCol);
       }
@@ -58,9 +59,8 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
   const getCellData = (value: string | null) => {
     if (!value) return { classes: 'bg-transparent border border-[#2a2d35]', title: '', content: '' };
 
-    // FIX: Match "C23" to "C" spec by taking the first character
     const typeKey = value.charAt(0).toUpperCase();
-    const rackSpec = rackTypes.find(r => r.name.startsWith(typeKey) || r.type === typeKey);
+    const rackSpec = rackTypes.find(r => r.type.charAt(0).toUpperCase() === typeKey);
     const power = rackSpec ? rackSpec.power_need : 0;
     
     if (viewMode === 'power') {
@@ -97,7 +97,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
             ))}
           </tr>
         </thead>
-        <tbody onMouseLeave={handleDragLeave}>
+        <tbody onDragLeave={handleDragLeave}>
           {Array.from({ length: rows }).map((_, rowIndex) => {
             if (isEmptyRow(rowIndex)) {
               return (
@@ -129,6 +129,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
                       key={colIndex}
                       draggable={cellValue !== null}
                       onDragStart={(e) => cellValue && handleDragStart(e, rowIndex, colIndex, cellValue)}
+                      onDragEnd={() => setDragOverCell(null)}
                       onDragOver={(e) => handleDragOver(e, rowIndex, colIndex)}
                       onDrop={(e) => handleDrop(e, rowIndex, colIndex, cellValue)}
                       className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all ${cellValue ? 'cursor-grab active:cursor-grabbing' : ''} ${cellData.classes} ${dragStyles}`}
