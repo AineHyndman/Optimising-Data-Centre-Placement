@@ -87,26 +87,31 @@ class Constraints(BaseModel):
     # Optional ratio constraints per generation
 
 
+# Defines the specification of a rack type 
 class RackSpec(BaseModel):
-    name: str
-    type: str
-    color: str
-    generation: int
-    power_need: int
-    resources: Resources
+    name: str               # Rack name or identifier 
+    type: str               # Rack category/type 
+    color: str              # Visual or logical grouping colour 
+    generation: int         # Hardware generation
+    power_need: int         # Power consumption of the rack 
+    resources: Resources    # resources provided by the rack 
 
+
+# Represents a complete plan for a suite 
 class SuitePlan(BaseModel):
-    datacenter: Optional[str] = None
-    suite: Optional[str] = None
-    total_power_usage: Optional[float] = None
-    compute: Optional[float] = None
-    storage: Optional[float] = None
-    ai: Optional[float] = None
+    datacenter: Optional[str] = None                           # Data centre indentifier 
+    suite: Optional[str] = None                                # Suite identifier
+    total_power_usage: Optional[float] = None                  # total power consumption
+    compute: Optional[float] = None                            # total compute capacity 
+    storage: Optional[float] = None                            # total storage capacity 
+    ai: Optional[float] = None                                 # total ai capacity 
     generation_distribution: Optional[Dict[str,int]] = None
-    positions: List[Position]
-    day: Optional[int] = None
+    positions: List[Position]                                  # planned rack placement
+    day: Optional[int] = None                                  # planning day
 
+
+#top-level model aggregating all planning inputs
 class PlanData(BaseModel):
-    constraints: Constraints
-    rack_types: List[RackSpec]
-    cluster_plans: List[SuitePlan]
+    constraints: Constraints        # global constraints for the plan 
+    rack_types: List[RackSpec]      # avaliable rack specifications
+    cluster_plans: List[SuitePlan]  #planned suites/clusters
