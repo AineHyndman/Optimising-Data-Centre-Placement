@@ -9,7 +9,6 @@ function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
   const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0);
   const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string>('');
   const [viewMode, setViewMode] = useState<'type' | 'power'>('type');
@@ -17,7 +16,6 @@ function App() {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setIsLoading(true);
     setError('');
     setSelectedSuiteIndex(0);
     setFileName(file.name);
@@ -30,8 +28,6 @@ function App() {
       setPlan(json);
     } catch {
       setError('Failed to process file. Is Docker running?');
-    } finally {
-      setIsLoading(false);
     }
   };
 
