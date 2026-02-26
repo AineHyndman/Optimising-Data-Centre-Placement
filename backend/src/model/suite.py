@@ -4,7 +4,7 @@ from typing import List
 from src.Emergency import EmergencyPower
 from src.model.rows import Row
 
-with open("src/json/suite.json", "r") as f:
+with open("src/utils/json/suite.json", "r") as f:
     suite_data = json.load(f)
 
 
@@ -31,6 +31,11 @@ class Suite:
 
         self.rows: List[Row] = [Row(rid) for rid in row_ids]
 
+
+
+    #
+    #
+    # To be REMOVED, from HERE to:
     def total_power_kw(self) -> int:
         return sum(row.total_power_kw() for row in self.rows)
 
@@ -39,12 +44,6 @@ class Suite:
 
     def emergency_power_kw(self) -> int:
         return int(self.emergency_power_mw * 1000)
-
-    """
-    
-    CHECK: function allowed_power_kw below, changes value depending on whether the emergency power is available or not
-
-    """
 
     def allowed_power_kw(self) -> int:
         return self.max_power_kw() + (
@@ -77,6 +76,16 @@ class Suite:
             count = count + myRow.rack_space()
         return count
         # Returns number of empty racks
+    # HERE
+    #
+    #
+
+
+
+
+
+
+
 
     # To check all input empty string "" or any other string
     def check_rsu_max(self, type: str):
