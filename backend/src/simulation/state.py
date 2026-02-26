@@ -7,7 +7,6 @@ from typing import Dict, Tuple
 from src.model.rack import Rack
 from src.model.position import Position
 
-
 #Position = Tuple[int, int]
 RackId = str
 Day = int
@@ -31,7 +30,7 @@ class SuiteState:
     day: Day
     positions: Dict[Position, Rack | None]
     racks: Dict[RackId, Rack]
-    emergencyState: EmergencyState()
+    emergencyState: EmergencyState = EmergencyState()
 
     def get_generation_counts(self): # tested
         return Counter(r.generation for r in self.positions.values() if r.generation != 0)
@@ -40,13 +39,13 @@ class SuiteState:
         return Counter(r.type for r in self.positions.values())
 
     def get_empty_positions(self): # tested
-        return sum(1 for r in self.positions.values() if r.generation == 0)
+        return sum(1 for r in self.positions.values() if r.generation is None)
 
     """
     Below uses int for key instead of the string, like it is int rows.json, might change later if needed
     """
     def get_row_distribution(self): # tested
-        return Counter(pos.row for pos in self.positions if self.positions[pos].generation != 0)
+        return Counter(pos.row for pos in self.positions if self.positions[pos].generation is not None)
 
 
     def get_2023_count(self): # tested
