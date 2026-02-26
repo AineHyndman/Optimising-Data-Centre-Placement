@@ -8,16 +8,15 @@ import { Sidebar } from './Sidebar';
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
   const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0);
-  const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
+  const [, setError] = useState<string>('');
+  const [, setLoading] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string>('');
   const [viewMode, setViewMode] = useState<'type' | 'power'>('type');
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setIsLoading(true);
+    setLoading(true);
     setError('');
     setSelectedSuiteIndex(0);
     setFileName(file.name);
@@ -31,30 +30,7 @@ function App() {
     } catch {
       setError('Failed to process file. Is Docker running?');
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRunOptimization = async () => {
-    if (!plan) {
-      setError('No plan loaded');
-      return;
-    }
-    setIsOptimizing(true);
-    setError('');
-    try {
-      const response = await fetch('http://localhost:8000/optimize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(plan),
-      });
-      if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
-      const optimizedPlan = await response.json();
-      setPlan(optimizedPlan);
-    } catch (err) {
-      setError(`Optimization failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsOptimizing(false);
+      setLoading(false);
     }
   };
 
@@ -78,16 +54,9 @@ function App() {
           {plan && <select value={selectedSuiteIndex} onChange={(e) => { setSelectedSuiteIndex(Number(e.target.value)); }} className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]">
             {plan.cluster_plans.map((suite, index) => <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>)}
           </select>}
-          <button
-            disabled={!plan || isOptimizing}
-            onClick={handleRunOptimization}
-            className={`py-2 px-5 rounded-md text-[13px] font-bold border ${isOptimizing ? 'bg-[#666] text-white border-[#666] cursor-not-allowed' : 'bg-transparent text-[#4CAF50] border border-[#4CAF50] hover:bg-[#4CAF50] hover:text-black cursor-pointer'}`}>
-            {isOptimizing ? 'Optimizing...' : 'Run Optimization'}
-          </button>
+          <button className="py-2 px-5 bg-transparent text-[#4CAF50] border border-[#4CAF50] rounded-md text-[13px] font-bold">Run Optimization</button>
         </div>
       </div>
-
-      {error && <div className="mb-4 p-4 bg-red-900/20 border border-red-500 rounded-lg text-red-400 text-[14px]">{error}</div>}
 
       {plan && currentSuite && baseGrid ? (
         <div className="flex gap-6 items-start">
