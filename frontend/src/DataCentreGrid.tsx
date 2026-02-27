@@ -8,6 +8,7 @@ interface DataCentreGridProps {
   title: string;
   viewMode?: 'type' | 'power';
   rackTypes?: RackSpec[];
+  onCellClick?: (row: number, col: number) => void; // NEW PROP
 }
 
 const cellColorMap: Record<string, string> = {
@@ -21,12 +22,12 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
   title,
   viewMode = 'type',
   rackTypes = [],
+  onCellClick // USE PROP
 }) => {
-  // Find the highest power rack to normalize the heatmap scale
   const maxPower = rackTypes.length > 0 ? Math.max(...rackTypes.map(r => r.power_need)) : 1;
 
   const getCellData = (value: string | null) => {
-    if (!value) return { classes: 'bg-transparent border border-[#2a2d35]', title: '', content: '' };
+    if (!value) return { classes: 'bg-transparent border border-[#2a2d35]', title: 'Empty', content: '' };
 
     const typeKey = value.charAt(0).toUpperCase();
     const rackSpec = rackTypes.find(r => r.type.charAt(0).toUpperCase() === typeKey);
@@ -72,7 +73,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
               return (
                 <tr key={rowIndex}>
                   <td className="text-[10px] text-[#444] font-mono pr-2 text-right">R{rowIndex.toString().padStart(2, '0')}</td>
-                  <td colSpan={cols} className="h-2"></td>
+                  <td colSpan={cols} className="h-2" onClick={() => onCellClick && onCellClick(rowIndex, 0)}></td>
                 </tr>
               );
             }
@@ -88,7 +89,8 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
                   return (
                     <td
                       key={colIndex}
-                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all ${cellData.classes}`}
+                      onClick={() => onCellClick && onCellClick(rowIndex, colIndex)} // TRIGGER MODAL
+                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all cursor-pointer hover:ring-2 hover:ring-white/50 ${cellData.classes}`}
                       title={viewMode === 'power' && cellValue ? cellData.title : `Row: R${rowIndex}, Col: P${colIndex}`}
                     >
                       {cellData.content}
