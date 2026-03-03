@@ -3,6 +3,7 @@ import json
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from src.simulation.engine import SimulationEngine
+from src.simulation.tasks.rack_replacer import RackReplacer
 from copy import deepcopy
 from src.domain.models import Position, Rack, PlanData, SuitePlan, SuiteState
 
@@ -108,5 +109,22 @@ async def run_plan(file: UploadFile = File(...)):
 
     except Exception as e:
         print("Error:", str(e))
+        raise HTTPException(status_code=422, detail=str(e))
+
+@app.post("/optimize", response_model=PlanData)
+async def optimize_plan(plan: PlanData, days: int = 1):
+    try:
+        suite_state = plan_to_suite_state(plan, suite_index=0)
+
+        engine = SimulationEngine(suite_state)
+        rack_replacer = RackReplacer()
+        engine.fast_forward(days, rack_replacer)
+
+        updated_plan = suite_state_to_plan(engine.current_state, plan, suite_index=0)
+
+        return updated_plan
+
+    except Exception as e:
+        print("Error during optimization:", str(e))
         raise HTTPException(status_code=422, detail=str(e))
 
