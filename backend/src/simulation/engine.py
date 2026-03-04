@@ -50,28 +50,19 @@ class SimulationEngine:
 """
 Setting up the test for it
 """
-
 def test():
 
-    """
-    Setting up the SuiteState for the test
-    """
-    
+    #Setting up the test version of SuiteState
     testSuite = test_suite()
 
-    """
-    Actual test for the new engine starts here
-    """
-
+    #Actual test for the new engine starts here
     testEngine = SimulationEngine(testSuite)
 
     testEngine.step()
     
     testEngine.fast_forward(5)
     for key in testEngine.history.keys():
-        #print(testEngine.history[key].get_2023_count())
-        pass
-    #print(testEngine.history)
+        print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service())
 
 
 

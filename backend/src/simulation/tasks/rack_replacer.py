@@ -28,7 +28,7 @@ class RackReplacer:
     
 
     def __init__(self, max_moves_per_day: int = 32):
-        self.day = -1
+        self.day = -1 # day starts at -1 since call instantly increments day
         self.max_moves_per_day = max_moves_per_day
 
         self.racks_changed = 0
@@ -46,6 +46,7 @@ class RackReplacer:
         self.history: List[dict] = []
     
     def __call__(self, state: SuiteState) -> SuiteState:
+        # Added a day incrementer for the history
         self.day += 1
         constraint = Constraints(state)
         return self.replace_multiple(state, constraint)
@@ -62,14 +63,13 @@ class RackReplacer:
 
         """
 
-        I added a possible change so that if the rack space is empty it chooses a random rack to put into that
+        I added a change so that if the rack space is empty it chooses a random rack to put into that
         It only starts working after all 2023 racks are replaced
 
         """
 
         if rack.code == "" and state.get_2023_count() == 0:
             old_code = random.choice(list(self.REPLACEMENT_MAP.keys()))
-            #print(old_code)
 
         elif rack is None or rack.code not in self.REPLACEMENT_MAP:
             return state
@@ -77,12 +77,10 @@ class RackReplacer:
         else:
             old_code = rack.code
 
-        #old_code = rack.code
         new_code = self.REPLACEMENT_MAP[old_code]
         new_rack = Rack(new_code)
 
         if state.total_power_kw() + new_rack.powerNeed > constraint.allowed_power_kw():
-            #print("going above")
             return state
 
         """
@@ -125,11 +123,9 @@ class RackReplacer:
 
         rack = state.positions[pos]
 
-        #print(rack.type)
-        #print("pow ", state.total_power_kw())
 
+        # Changed it so that it removes any rack
         if rack is None or rack.code == "":
-            #print("gggggggggggggggggggggggggggggggggggggggggggg")
             return state
 
         old_code = rack.code
@@ -181,14 +177,8 @@ class RackReplacer:
         If you want it to be other way around, just move the if statement below to below the "elif cooldown" statement
         """
         if state.total_power_kw() > constraint.max_power_kw:
-            #print("Active")
-            #print(state.get_2023_count())
-            #print(emergency_days)
             active = True
         else:
-            #print("Not Active")
-            #print(state.get_2023_count())
-            #print(state.emergencyState.cool_days)
             pass
 
 
@@ -221,10 +211,8 @@ class RackReplacer:
 
     def end_day_snapshot(self, day: int, suite_id: str, filepath: str = "history.jsonl"):
         if not self.history:
-            #print("Nothing Changed")
             return
         
-        #print(day)
 
         record = {
             "day": day,
@@ -256,24 +244,18 @@ class RackReplacer:
         """
         if state.emergencyState.available_days() > 1 and not state.emergencyState.cooldown:
             for pos in state.positions.keys():
-                #print(pos)
                 if self.racks_changed >= self.max_moves_per_day:
                     break
                 state = self.replace_rack(state, pos, constraint)
         else:
-            #print("emergency  ", state.emergencyState.available_days(), "  ", state.emergencyState.cool_days)
             for pos in state.positions.keys():
                 if self.racks_changed >= self.max_moves_per_day:
                     break
                 state = self.emergency_replace_rack(state, pos, constraint)
 
 
+        # Added the history integration into this
         self.end_day_snapshot(self.day, "Suite-A")
-
-        #print(constraint.allowed_power_kw())
-        #print(constraint.available_power_kw())
-        #print(constraint.is_over_power_budget())
-
 
         return self.update_emergency(state, constraint)
 
