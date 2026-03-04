@@ -241,6 +241,7 @@ class RackReplacer:
 Test below creates new suitestate, emergencystate and rackreplacer
 Then it simulates a cycle/day
 """
+"""
 def myTest():
     x = 0
     y = 0
@@ -319,3 +320,4 @@ def myTest():
 
 
 myTest()
+"""
