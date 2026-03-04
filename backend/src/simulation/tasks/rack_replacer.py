@@ -27,6 +27,7 @@ class RackReplacer:
     
 
     def __init__(self, max_moves_per_day: int = 32):
+        self.day = -1
         self.max_moves_per_day = max_moves_per_day
 
         self.racks_changed = 0
@@ -44,6 +45,7 @@ class RackReplacer:
         self.history: List[dict] = []
     
     def __call__(self, state: SuiteState) -> SuiteState:
+        self.day += 1
         constraint = Constraints(state)
         return self.replace_multiple(state, constraint)
 
@@ -234,6 +236,10 @@ class RackReplacer:
                     break
                 state = self.emergency_replace_rack(state, pos, constraint)
 
+
+        self.end_day_snapshot(self.day, 1)
+
+
         return self.update_emergency(state, constraint)
 
 
@@ -285,23 +291,17 @@ def myTest():
     print(newSuite.get_rsu_per_service())
     
 
-    rr = RackReplacer()
-
     newSuite = rr(newSuite)
 
     print(newSuite.get_2023_count())
     print(newSuite.total_power_kw())
     print(newSuite.get_rsu_per_service())
 
-    rr = RackReplacer()
-
     newSuite = rr(newSuite)
 
     print(newSuite.get_2023_count())
     print(newSuite.total_power_kw())
     print(newSuite.get_rsu_per_service())
-
-    rr = RackReplacer()
 
     newSuite = rr(newSuite)
 
