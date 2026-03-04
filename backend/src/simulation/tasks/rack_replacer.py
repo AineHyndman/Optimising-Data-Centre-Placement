@@ -7,6 +7,7 @@ I switched the old rack type to the new one
 
 
 import json
+import random
 from datetime import datetime, timezone
 from typing import List, Optional
 from src.model.position import Position
@@ -59,12 +60,28 @@ class RackReplacer:
 
         rack = state.positions[pos]
 
+        """
+
+        I added a possible change so that if the rack space is empty it chooses a random rack to put into that
+
+        """
+
+        #if rack.code == "":
+        #    old_code = random.choice(list(self.REPLACEMENT_MAP.keys()))
+            #print(old_code)
+
+
+        """
+        To test the random rack, uncomment the code above and below, and change the if below to an elif statement
+        """
         if rack is None or rack.code not in self.REPLACEMENT_MAP:
             return state
+        
+        #else:
+        #    old_code = rack.code
 
         old_code = rack.code
         new_code = self.REPLACEMENT_MAP[old_code]
-
         new_rack = Rack(new_code)
 
         if state.total_power_kw() + new_rack.powerNeed > constraint.allowed_power_kw():
@@ -247,7 +264,7 @@ class RackReplacer:
 Test below creates new suitestate, emergencystate and rackreplacer
 Then it simulates a cycle/day
 """
-"""
+
 def myTest():
     x = 0
     y = 0
@@ -320,4 +337,3 @@ def myTest():
 
 
 myTest()
-"""

@@ -72,7 +72,7 @@ def test():
     testEngine.step()
     testEngine.step()
     
-    testEngine.fast_forward(10)
+    testEngine.fast_forward(100)
     for key in testEngine.history.keys():
         print(testEngine.history[key].get_2023_count())
 
