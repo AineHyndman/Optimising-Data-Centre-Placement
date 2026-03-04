@@ -66,15 +66,12 @@ def test():
     testEngine = SimulationEngine(testSuite)
 
     testEngine.step()
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
     
-    testEngine.fast_forward(100)
+    testEngine.fast_forward(5)
     for key in testEngine.history.keys():
-        print(testEngine.history[key].get_2023_count())
+        #print(testEngine.history[key].get_2023_count())
+        pass
+    #print(testEngine.history)
 
 
 
