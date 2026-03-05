@@ -55,3 +55,17 @@ export interface Range {
     rack_types: RackSpec[];
     cluster_plans: SuitePlan[];
   }
+
+  export interface RsuTotals {
+    compute: number;
+    storage: number;
+    ai: number;
+  }
+  
+  export interface WeeklySummaryData {
+    week: number;
+    racks_replaced: number;
+    power_saved: number;
+    total_power_usage: number;
+    rsu_totals: RsuTotals;
+  }
