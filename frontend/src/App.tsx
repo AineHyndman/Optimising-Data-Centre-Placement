@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import './App.css';
-import type { ClusterPlan } from './types';
+import type { ClusterPlan, WeeklySummaryData } from './types';
 import { parsePositionsToGrid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
 import { Sidebar } from './Sidebar';
-import { RackSelectorModal } from './RackSelectorModal'; // IMPORT THE NEW MODAL
+import { RackSelectorModal } from './RackSelectorModal';
+import { WeeklySummary } from './WeeklySummary'; // NEW IMPORT
 
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
@@ -14,9 +15,13 @@ function App() {
   const [fileName, setFileName] = useState<string>('');
   const [viewMode, setViewMode] = useState<'type' | 'power'>('type');
   
-  // NEW STATE: Planned Moves & Modal Tracking
   const [plannedMoves, setPlannedMoves] = useState<{row: number, col: number, rackType: string | null}[]>([]);
   const [modalPos, setModalPos] = useState<{row: number, col: number} | null>(null);
+
+  // NEW STATE: Reporting & Simulation
+  const [activeTab, setActiveTab] = useState<'layout' | 'report'>('layout');
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [scheduleResults, setScheduleResults] = useState<WeeklySummaryData[] | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -25,7 +30,10 @@ function App() {
     setError('');
     setSelectedSuiteIndex(0);
     setPlannedMoves([]); 
+    setScheduleResults(null); // Reset results on new file
+    setActiveTab('layout'); // Reset to grid view
     setFileName(file.name);
+    
     const formData = new FormData();
     formData.append('file', file);
     try {
@@ -43,7 +51,6 @@ function App() {
   const currentSuite = plan?.cluster_plans?.[selectedSuiteIndex];
   const baseGrid = currentSuite ? parsePositionsToGrid(currentSuite.positions) : null;
 
-  // Derive the local grid by applying planned moves on top of the base grid
   const localGrid = useMemo(() => {
     if (!baseGrid) return null;
     const newGrid = baseGrid.map(row => [...row]); 
@@ -53,24 +60,47 @@ function App() {
     return newGrid;
   }, [baseGrid, plannedMoves]);
 
-  // Handle the selection from the modal
   const handleRackSelect = (newType: string | null) => {
     if (!modalPos || !localGrid) return;
     const currentType = localGrid[modalPos.row][modalPos.col];
 
-    // Only record if it actually changed
     if (newType !== currentType) {
       setPlannedMoves(prev => {
-        // Remove any previous moves for this exact cell to prevent duplicates
         const filtered = prev.filter(m => m.row !== modalPos.row || m.col !== modalPos.col);
-        return [...filtered, {
-          row: modalPos.row,
-          col: modalPos.col,
-          rackType: newType
-        }];
+        return [...filtered, { row: modalPos.row, col: modalPos.col, rackType: newType }];
       });
     }
-    setModalPos(null); // Close modal
+    setModalPos(null);
+  };
+
+  // NEW FUNCTION: Call Backend Schedule Endpoint
+  const handleRunOptimization = async () => {
+    if (!plan) return;
+    setIsSimulating(true);
+    setError('');
+    
+    try {
+      const response = await fetch('http://localhost:8000/schedule?days=30', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(plan)
+      });
+      
+      if (!response.ok) throw new Error(`Simulation failed: ${response.statusText}`);
+      
+      const data = await response.json();
+      
+      // Handle either a direct array or a wrapped object depending on backend
+      const summaries = data.weekly_summaries || data;
+      setScheduleResults(summaries); 
+      setActiveTab('report'); // Switch to the report view
+      
+    } catch (err) {
+      setError('Failed to run optimization schedule. Check backend logs.');
+      console.error(err);
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
   const rows = localGrid?.length || 0;
@@ -87,63 +117,89 @@ function App() {
           </span>}
         </h2>
         <div className="flex gap-3 items-center">
-          {plan && <select value={selectedSuiteIndex} onChange={(e) => { setSelectedSuiteIndex(Number(e.target.value)); setPlannedMoves([]); }} className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]">
-            {plan.cluster_plans.map((suite, index) => <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>)}
-          </select>}
-          <button className="py-2 px-5 bg-transparent text-[#4CAF50] border border-[#4CAF50] rounded-md text-[13px] font-bold">Run Optimization</button>
+          {plan && (
+            <select 
+              value={selectedSuiteIndex} 
+              onChange={(e) => { 
+                setSelectedSuiteIndex(Number(e.target.value)); 
+                setPlannedMoves([]);
+                setActiveTab('layout');
+              }} 
+              className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]"
+            >
+              {plan.cluster_plans.map((suite, index) => <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>)}
+            </select>
+          )}
+          {/* UPDATED BUTTON */}
+          <button 
+            onClick={handleRunOptimization}
+            disabled={isSimulating || !plan}
+            className={`py-2 px-5 rounded-md text-[13px] font-bold flex items-center gap-1.5 transition-colors
+              ${isSimulating ? 'bg-[#333] text-[#888] cursor-not-allowed' : 'bg-transparent text-[#4CAF50] border border-[#4CAF50] hover:bg-[#4CAF50]/10'}`}
+          >
+            {isSimulating ? '⏳ Running...' : <><span>&#9655;</span> Run Optimization</>}
+          </button>
         </div>
       </div>
 
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
       {plan && currentSuite && localGrid ? (
-        <div className="flex gap-6 items-start">
-          <div className="flex-1 min-w-0 flex flex-col gap-6">
-            <div className="bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35]">
-              <div className="flex justify-between items-center mb-4">
-                <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
-                <div className="flex bg-[#0f1115] rounded-md p-1 border border-[#333]">
-                  <button onClick={() => setViewMode('type')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'type' ? 'bg-[#4A90E2] text-white' : 'text-[#888]'}`}>Rack View</button>
-                  <button onClick={() => setViewMode('power')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'power' ? 'bg-[#F44336] text-white' : 'text-[#888]'}`}>Power Heatmap</button>
-                </div>
-              </div>
-              
-              <DataCentreGrid 
-                grid={localGrid} 
-                title="" 
-                viewMode={viewMode} 
-                rackTypes={plan.rack_types} 
-                onCellClick={(row, col) => setModalPos({ row, col })} // Open Modal on Click
-              />
-            </div>
-
-            {/* PLANNED MOVES PANEL */}
-            {plannedMoves.length > 0 && (
-              <div className="bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35]">
-                <div className="flex justify-between mb-4">
-                  <span className="font-bold">Planned Modifications ({plannedMoves.length})</span>
-                  <button onClick={() => setPlannedMoves([])} className="text-xs text-red-500 bg-red-500/10 px-3 py-1 rounded border border-red-500/50">Clear All</button>
-                </div>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {plannedMoves.map((m, i) => (
-                    <div key={i} className="bg-[#0f1115] p-3 rounded border border-[#333] text-sm flex justify-between items-center">
-                      <span>
-                        <span className="text-[#888] font-mono mr-2">Position: R{m.row.toString().padStart(2, '0')} P{m.col}</span> 
-                        <span className="text-[#4A90E2] font-bold mx-2">→</span> 
-                        <span className={`font-mono font-bold ${!m.rackType ? 'text-[#4CAF50]' : 'text-white'}`}>
-                          {m.rackType || 'EMPTY'}
-                        </span>
-                      </span>
-                      <button onClick={() => setPlannedMoves(prev => prev.filter((_, idx) => idx !== i))} className="text-[#666] hover:text-white text-xs">Undo</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        
+        // VIEW TOGGLE LOGIC
+        activeTab === 'report' && scheduleResults ? (
           
-          <Sidebar suite={currentSuite} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} />
-        </div>
+          <WeeklySummary data={scheduleResults} onBack={() => setActiveTab('layout')} />
+          
+        ) : (
+          
+          <div className="flex gap-6 items-start">
+            <div className="flex-1 min-w-0 flex flex-col gap-6">
+              <div className="bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35]">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                  <div className="flex bg-[#0f1115] rounded-md p-1 border border-[#333]">
+                    <button onClick={() => setViewMode('type')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'type' ? 'bg-[#4A90E2] text-white' : 'text-[#888]'}`}>Rack View</button>
+                    <button onClick={() => setViewMode('power')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'power' ? 'bg-[#F44336] text-white' : 'text-[#888]'}`}>Power Heatmap</button>
+                  </div>
+                </div>
+                
+                <DataCentreGrid 
+                  grid={localGrid} 
+                  title="" 
+                  viewMode={viewMode} 
+                  rackTypes={plan.rack_types} 
+                  onCellClick={(row, col) => setModalPos({ row, col })}
+                />
+              </div>
+
+              {plannedMoves.length > 0 && (
+                <div className="bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35]">
+                  <div className="flex justify-between mb-4">
+                    <span className="font-bold">Planned Modifications ({plannedMoves.length})</span>
+                    <button onClick={() => setPlannedMoves([])} className="text-xs text-red-500 bg-red-500/10 px-3 py-1 rounded border border-red-500/50">Clear All</button>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {plannedMoves.map((m, i) => (
+                      <div key={i} className="bg-[#0f1115] p-3 rounded border border-[#333] text-sm flex justify-between items-center">
+                        <span>
+                          <span className="text-[#888] font-mono mr-2">Position: R{m.row.toString().padStart(2, '0')} P{m.col}</span> 
+                          <span className="text-[#4A90E2] font-bold mx-2">→</span> 
+                          <span className={`font-mono font-bold ${!m.rackType ? 'text-[#4CAF50]' : 'text-white'}`}>
+                            {m.rackType || 'EMPTY'}
+                          </span>
+                        </span>
+                        <button onClick={() => setPlannedMoves(prev => prev.filter((_, idx) => idx !== i))} className="text-[#666] hover:text-white text-xs">Undo</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <Sidebar suite={currentSuite} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} />
+          </div>
+        )
       ) : (
         <div className="flex flex-col items-center justify-center mt-20 p-20 bg-[#1a1d24] rounded-xl border border-dashed border-[#444] max-w-[600px] mx-auto text-center">
            <h3 className="text-xl mb-4">Upload a configuration to begin</h3>
@@ -154,7 +210,6 @@ function App() {
         </div>
       )}
 
-      {/* RENDER THE MODAL */}
       {plan && modalPos && localGrid && (
         <RackSelectorModal
           isOpen={!!modalPos}
