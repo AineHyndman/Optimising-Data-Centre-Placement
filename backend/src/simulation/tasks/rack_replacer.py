@@ -41,9 +41,11 @@ class RackReplacer:
         self.Storage_RSU_change = 0.0
         self.AI_RSU_change = 0.0
 
+        self.initial_power_kw: int = 0
         self.history: List[dict] = []
     
     def __call__(self, state: SuiteState) -> SuiteState:
+        self.initial_power_kw = state.total_power_kw()
         constraint = Constraints(state)
         return self.replace_multiple(state, constraint)
 
@@ -190,9 +192,8 @@ class RackReplacer:
             "to": new_code
         })
 
-    def end_day_snapshot(self, day: int, suite_id: str, filepath: str = "history.jsonl"):
-        if not self.history:
-            return
+    def end_day_snapshot(self, day: int, suite_id: str, state: SuiteState, filepath: str = "history.jsonl") -> dict:
+        power_saved_kw = self.initial_power_kw - state.total_power_kw()
 
         record = {
             "day": day,
@@ -201,22 +202,27 @@ class RackReplacer:
             "summary": {
                 "racks_changed": self.racks_changed,
                 "net_RSU_change": self.net_RSU_change,
-                "net_power_change": self.net_power_change
+                "net_power_change": self.net_power_change,
+                "power_saved_kw": power_saved_kw
             }
         }
 
-        with open(filepath, "a", encoding="utf-8") as f:
-            f.write(json.dumps(record) + "\n")
+        if self.history:
+            with open(filepath, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
 
         # Reset counters for the next day
         self.history = []
         self.racks_changed = 0
         self.net_RSU_change = 0.0
         self.net_power_change = 0.0
+        self.initial_power_kw = 0
 
         self.Compute_RSU_change = 0.0
         self.Storage_RSU_change = 0.0
         self.AI_RSU_change = 0.0
+
+        return record
 
     def replace_multiple(self, state: SuiteState, constraint: Constraints) -> SuiteState:
         """
