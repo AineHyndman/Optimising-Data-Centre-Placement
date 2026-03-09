@@ -63,25 +63,7 @@ class SuiteState:
 
     def total_power_kw(self) -> int: # tested
         return sum(r.powerNeed for r in self.positions.values())
-
-    def total_rsu_per_kw(self) -> float:
-        total_power = self.total_power_kw()
-        if total_power == 0:
-            return 0.0
-        total_rsu = sum(r.capacity for r in self.positions.values())
-        return round(total_rsu / total_power, 4)
-
-    def green_score(self) -> float:
-        # Baselines from racks.json:
-        # Worst case: s23 = 1 RSU / 20 kW = 0.05 RSU/kW
-        # Best case:  c25 = 2.8 RSU / 19 kW approx 0.1474 RSU/kW
-        _WORST = 1 / 20
-        _BEST = 2.8 / 19
-        rsu_per_kw = self.total_rsu_per_kw()
-        if rsu_per_kw == 0:
-            return 0.0
-        score = (rsu_per_kw - _WORST) / (_BEST - _WORST) * 100
-        return round(max(0.0, min(100.0, score)), 2)
+    
 
 
 """
