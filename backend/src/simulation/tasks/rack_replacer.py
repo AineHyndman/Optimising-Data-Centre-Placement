@@ -71,7 +71,10 @@ class RackReplacer:
         old_code = rack.code
         old_rack = Rack(old_code)
 
+        # Uses new choose_rack function from planners.py
         new_rack = choose_rack(state, rack, constraint)
+        
+        # If the same type is popped out, it just returns state
         if old_code == new_rack.code:
             return state
         

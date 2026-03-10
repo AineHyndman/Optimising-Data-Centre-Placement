@@ -23,9 +23,9 @@ def choose_rack(state: SuiteState, old_rack: Rack, constraint: Constraints):
 
 
     """
-    checks which type we are dealing with and makes sure no constraints are broken
+    Checks which type we are dealing with and makes sure no constraints are broken
 
-    Changed it so that if it reachest the max rsu for the service it just removes the 2023 Rack
+    If it reachest the max rsu for the service it just removes the 2023 Rack
     This makes it possible to add more new racks
     """
     match new_rack.type:
