@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Callable, Dict, List
-#from .actions import Action
-from src.simulation.state import SuiteState, test_suite
+from .actions import Action
+from src.domain.models import Day, SuiteState
 from src.simulation.tasks.rack_replacer import RackReplacer
 
 
@@ -12,14 +12,11 @@ class SimulationEngine:
         self.current_state = initial_state
         self.rack_replacer = RackReplacer()
 
-    def step(self) -> SuiteState:
+    def step(self, actions: List[Action]) -> SuiteState:
         state = self.current_state
 
-        """
-        Replaced actions with rack replacer
-        """
-
-        state = self.rack_replacer(state)
+        for action in actions:
+            state = action(state)
 
         new_day = self.current_day + 1
         new_state = replace(state, day=new_day)
@@ -30,11 +27,12 @@ class SimulationEngine:
 
         return new_state
 
-    def fast_forward(self, days: int):
+    def fast_forward(self, days: int, planner: Callable[[SuiteState], List[Action]]):
         for _ in range(days):
-            self.step()
+            actions = planner(self.current_state)
+            self.step(actions)
 
-    def rollback(self, day: int):
+    def rollback(self, day: Day):
         if day not in self.history:
             raise ValueError("Day not in history")
 
@@ -44,26 +42,3 @@ class SimulationEngine:
         for d in list(self.history.keys()):
             if d > day:
                 del self.history[d]
-
-
-
-"""
-Setting up the test for it
-"""
-def test():
-
-    #Setting up the test version of SuiteState
-    testSuite = test_suite()
-
-    #Actual test for the new engine starts here
-    testEngine = SimulationEngine(testSuite)
-
-    testEngine.step()
-    
-    testEngine.fast_forward(5)
-    for key in testEngine.history.keys():
-        print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service())
-
-
-
-test()

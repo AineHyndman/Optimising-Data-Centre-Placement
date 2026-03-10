@@ -63,6 +63,37 @@ class SuiteState:
 
     def total_power_kw(self) -> int: # tested
         return sum(r.powerNeed for r in self.positions.values())
+
+
+"""
+Added suite for testing which uses an alternate version of the Suite
+"""
+def test_suite() -> SuiteState:
+    x = 0
+    y = 0
+    with open("src/utils/json/rows.json") as f:
+        rows_data = json.load(f)
+    with open("src/utils/json/testSuite.json") as f:
+        suite_data = json.load(f)
+    row_ids = suite_data.get("Rows")
+    testPos = {}
+    testRack = {}
+    #print(row_ids)
+
+    for row in rows_data:
+        x = 0
+        for rack in row["Positions"]:
+            testRack[rack] = Rack(rack)
+            my_tuple = (x, y)
+            testPos[Position(suite=0, row=y, position=x)] = testRack[rack]
+            x += 1
+        y += 1
+
+
+    testEmergency = EmergencyState()
+    testSuite = SuiteState(0, testPos, testRack, testEmergency)
+
+    return testSuite
     
 
 """
