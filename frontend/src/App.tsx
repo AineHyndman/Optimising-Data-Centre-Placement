@@ -57,6 +57,26 @@ function App() {
     return newGrid;
   }, [baseGrid, plannedMoves]);
 
+  const modifiedSuite = useMemo(() => {
+    if (!currentSuite || !plan || plannedMoves.length === 0) return currentSuite;
+    const moveMap = new Map(plannedMoves.map(m => [`${m.row},${m.col}`, m.rackType]));
+    const rackSpecMap = new Map(plan.rack_types.map(r => [r.name, r]));
+    const updatedPositions = currentSuite.positions.map(pos => {
+      const key = `${Number(pos.row)},${Number(pos.position)}`;
+      return moveMap.has(key) ? { ...pos, rack_type: moveMap.get(key) ?? '' } : pos;
+    });
+    let totalPower = 0, compute = 0, storage = 0, ai = 0;
+    updatedPositions.forEach(pos => {
+      const spec = pos.rack_type ? rackSpecMap.get(pos.rack_type) : undefined;
+      if (!spec) return;
+      totalPower += spec.power_need;
+      compute += spec.resources.compute;
+      storage += spec.resources.storage;
+      ai += spec.resources.ai;
+    });
+    return { ...currentSuite, positions: updatedPositions, total_power_usage: totalPower, compute, storage, ai };
+  }, [currentSuite, plannedMoves, plan]);
+
   const handleRackSelect = (newType: string | null) => {
     if (!modalPos || !localGrid) return;
     const currentType = localGrid[modalPos.row][modalPos.col];
@@ -193,7 +213,7 @@ function App() {
               )}
             </div>
             
-            <Sidebar suite={currentSuite} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} />
+            <Sidebar suite={modifiedSuite!} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} />
           </div>
         )
       ) : (
