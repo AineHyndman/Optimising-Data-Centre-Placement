@@ -63,6 +63,7 @@ class SuiteState:
 
     def total_power_kw(self) -> int: # tested
         return sum(r.powerNeed for r in self.positions.values())
+    
 
 
 """
@@ -94,7 +95,7 @@ def test_suite() -> SuiteState:
     testSuite = SuiteState(0, testPos, testRack, testEmergency)
 
     return testSuite
-    
+
 
 """
 #just a test, uncomment if you want to test it
