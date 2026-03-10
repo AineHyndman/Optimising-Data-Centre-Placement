@@ -1,0 +1,203 @@
+import { readFileSync } from 'fs';
+import { parseArgs } from 'util';
+
+// Parse command line arguments
+const { values } = parseArgs({
+    options: {
+        'plan': { type: 'string', short: 'p' },
+        'datacenter': { type: 'string', short: 'd' },
+        'suite': { type: 'string', short: 's' },
+        'list': { type: 'boolean', short: 'l' },
+    }
+});
+
+if (!values.plan) {
+    console.error('Usage: node viewer.mjs -p <cluster-plan.json> [-d <datacenter>] [-s <suite>] [-l]');
+    console.error('  -p, --plan         Path to cluster plan JSON file');
+    console.error('  -d, --datacenter   Filter by datacenter (e.g., tcd1)');
+    console.error('  -s, --suite        Filter by suite (e.g., A)');
+    console.error('  -l, --list         List all datacenters/suites in the plan');
+    process.exit(1);
+}
+
+// ANSI color codes
+const colors = {
+    reset: '\x1b[0m',
+    black: '\x1b[30m',
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    magenta: '\x1b[35m',
+    cyan: '\x1b[36m',
+    white: '\x1b[37m',
+    bright_black: '\x1b[90m',
+    bright_red: '\x1b[91m',
+    bright_green: '\x1b[92m',
+    bright_yellow: '\x1b[93m',
+    bright_blue: '\x1b[94m',
+    bright_magenta: '\x1b[95m',
+    bright_cyan: '\x1b[96m',
+    bright_white: '\x1b[97m',
+    // Background colors
+    bg_black: '\x1b[40m',
+    bg_red: '\x1b[41m',
+    bg_green: '\x1b[42m',
+    bg_yellow: '\x1b[43m',
+    bg_blue: '\x1b[44m',
+    bg_magenta: '\x1b[45m',
+    bg_cyan: '\x1b[46m',
+    bg_white: '\x1b[47m',
+};
+
+// Load cluster plan file
+const clusterPlan = JSON.parse(readFileSync(values.plan, 'utf-8'));
+
+// Get rack types from the cluster plan
+const rackTypes = clusterPlan.rack_types;
+if (!rackTypes) {
+    console.error('Error: Cluster plan does not contain rack_types. Please regenerate the plan.');
+    process.exit(1);
+}
+
+// Build rack type lookup with colors
+const rackTypeMap = new Map();
+for (const rt of rackTypes) {
+    rackTypeMap.set(rt.name, rt);
+}
+
+// List mode
+if (values.list) {
+    console.log('Available datacenter/suite combinations:');
+    for (const plan of clusterPlan.cluster_plans) {
+        console.log(`  ${plan.datacenter}-${plan.suite}`);
+    }
+    process.exit(0);
+}
+
+// Filter plans
+let plansToShow = clusterPlan.cluster_plans;
+if (values.datacenter) {
+    plansToShow = plansToShow.filter(p => p.datacenter === values.datacenter);
+}
+if (values.suite) {
+    plansToShow = plansToShow.filter(p => p.suite === values.suite);
+}
+
+if (plansToShow.length === 0) {
+    console.error('No matching plans found.');
+    process.exit(1);
+}
+
+// Get color code for a rack type
+function getColor(rackTypeName) {
+    const rt = rackTypeMap.get(rackTypeName);
+    if (!rt || !rt.color) return colors.white;
+    return colors[rt.color] || colors.white;
+}
+
+// Render a single suite plan
+function renderSuitePlan(plan) {
+    console.log('');
+    console.log(`${'='.repeat(70)}`);
+    console.log(`  Datacenter: ${plan.datacenter}  |  Suite: ${plan.suite}`);
+    console.log(`  Power: ${plan.total_power_usage}  |  Compute: ${plan.compute}  |  Storage: ${plan.storage}  |  AI: ${plan.ai}`);
+    if (plan.generation_distribution) {
+        const genStr = Object.entries(plan.generation_distribution)
+            .map(([gen, count]) => `${gen}: ${count}`)
+            .join(', ');
+        console.log(`  Generations: ${genStr}`);
+    }
+    console.log(`${'='.repeat(70)}`);
+
+    // Group positions by row
+    const rowMap = new Map();
+    for (const pos of plan.positions) {
+        const row = parseInt(pos.row, 10);
+        if (!rowMap.has(row)) {
+            rowMap.set(row, []);
+        }
+        rowMap.get(row).push(pos);
+    }
+
+    // Sort rows and positions
+    const sortedRows = Array.from(rowMap.keys()).sort((a, b) => a - b);
+
+    // Find which rows are empty (not in positions)
+    const allRows = new Set();
+    for (let i = 1; i <= 48; i++) allRows.add(i);
+    const usedRows = new Set(sortedRows);
+    const emptyRows = [...allRows].filter(r => !usedRows.has(r)).sort((a, b) => a - b);
+
+    console.log(`  Empty rows: ${emptyRows.join(', ')}`);
+    console.log('');
+
+    // Print legend
+    console.log('  Legend:');
+    const seenTypes = new Set();
+    for (const pos of plan.positions) {
+        seenTypes.add(pos.rack_type);
+    }
+    for (const typeName of seenTypes) {
+        const rt = rackTypeMap.get(typeName);
+        if (rt) {
+            const color = getColor(typeName);
+            console.log(`    ${color}██${colors.reset} ${typeName} (${rt.type}, Gen ${rt.generation})`);
+        }
+    }
+    console.log('');
+
+    // Print header
+    console.log('  Row  | ' + Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(3)).join(' '));
+    console.log('  ' + '-'.repeat(6) + '+' + '-'.repeat(64));
+
+    // Print all 48 rows
+    for (let row = 1; row <= 48; row++) {
+        // A row is empty if it has no positions at all
+        const hasPositions = rowMap.has(row);
+
+        if (!hasPositions) {
+            // Print empty row with black/dim boxes
+            let rowStr = `  ${String(row).padStart(4)} | `;
+            for (let p = 1; p <= 16; p++) {
+                rowStr += `${colors.bright_black} ██${colors.reset} `;
+            }
+            console.log(rowStr);
+        } else {
+            const positions = rowMap.get(row) || [];
+            // Sort positions within row
+            positions.sort((a, b) => parseInt(a.position, 10) - parseInt(b.position, 10));
+
+            // Build position map for this row
+            const posMap = new Map();
+            for (const pos of positions) {
+                posMap.set(parseInt(pos.position, 10), pos);
+            }
+
+            // Build row string
+            let rowStr = `  ${String(row).padStart(4)} | `;
+            for (let p = 1; p <= 16; p++) {
+                if (posMap.has(p)) {
+                    const pos = posMap.get(p);
+                    const color = getColor(pos.rack_type);
+                    rowStr += `${color} ██${colors.reset} `;
+                } else {
+                    rowStr += `${colors.bright_black} ██${colors.reset} `;
+                }
+            }
+            console.log(rowStr);
+        }
+    }
+
+    console.log('');
+}
+
+// Render all matching plans
+for (const plan of plansToShow) {
+    renderSuitePlan(plan);
+}
+
+// Print summary
+if (plansToShow.length > 1) {
+    console.log(`\nShowing ${plansToShow.length} suite plans.`);
+}
