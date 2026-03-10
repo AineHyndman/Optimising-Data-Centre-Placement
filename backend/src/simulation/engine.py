@@ -59,10 +59,15 @@ def test():
     testEngine = SimulationEngine(testSuite)
 
     testEngine.step()
+    testEngine.step()
+    testEngine.step()
+    testEngine.step()
+    testEngine.step()
+
     
-    testEngine.fast_forward(5)
+    testEngine.fast_forward(20)
     for key in testEngine.history.keys():
-        print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service())
+        print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service(), testEngine.history[key].get_type_counts(), testEngine.history[key].get_generation_counts())
 
 
 
