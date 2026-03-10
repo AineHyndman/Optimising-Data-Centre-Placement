@@ -16,13 +16,15 @@ from src.simulation.state import SuiteState
 from src.simulation.state import EmergencyState
 from dataclasses import replace
 from src.simulation.constraints import Constraints
+from src.simulation.planners import choose_rack
 
 class RackReplacer:
     
     REPLACEMENT_MAP = {
         "c23": "c25",
         "s23": "s25",
-        "a23": "a25"
+        "a23": "a25",
+        "": ""
     }
 
     
@@ -61,56 +63,38 @@ class RackReplacer:
 
         rack = state.positions[pos]
 
-        """
 
-        I added a change so that if the rack space is empty it chooses a random rack to put into that
-        It only starts working after all 2023 racks are replaced
-
-        """
-
-        if rack.code == "" and state.get_2023_count() == 0:
-            old_code = random.choice(list(self.REPLACEMENT_MAP.keys()))
-
-        elif rack is None or rack.code not in self.REPLACEMENT_MAP:
+        if rack is None or rack.code not in self.REPLACEMENT_MAP:
             return state
         
-        else:
-            old_code = rack.code
 
-        new_code = self.REPLACEMENT_MAP[old_code]
-        new_rack = Rack(new_code)
+        old_code = rack.code
+        old_rack = Rack(old_code)
+
+        new_rack = choose_rack(state, rack, constraint)
+        if old_code == new_rack.code:
+            return state
+        
 
         if state.total_power_kw() + new_rack.powerNeed > constraint.allowed_power_kw():
             return state
 
-        """
-        checks which type we are dealing with and makes sure no limits are surpassed
-
-        NEW: changed it so that if it reachest the max rsu for the service it just removes the 2023 Rack
-        This makes it possible to add more new racks
-        """
-        match new_rack.type:
-            case "Compute":
-                if state.get_rsu_per_service()["Compute"] + new_rack.capacity - rack.capacity > constraint.compute_max:
-                    new_rack = Rack("")
-                else:
-                    self.Compute_RSU_change += new_rack.capacity - rack.capacity
-            case "Storage":
-                if state.get_rsu_per_service()["Storage"] + new_rack.capacity - rack.capacity > constraint.storage_max:
-                    new_rack = Rack("")
-                else:
-                    self.Storage_RSU_change += new_rack.capacity - rack.capacity
-            case "AI":
-                if state.get_rsu_per_service()["AI"] + new_rack.capacity - rack.capacity > constraint.AI_max:
-                    new_rack = Rack("")
-                else:
-                    self.AI_RSU_change += new_rack.capacity - rack.capacity
+        new_code = new_rack.code
 
         new_positions = dict(state.positions)
         new_racks = dict(state.racks)
 
         new_positions[pos] = new_rack
         new_racks[new_rack.code] = new_rack
+
+
+        match new_rack.type:
+            case "Compute":
+                self.Compute_RSU_change += new_rack.capacity - old_rack.capacity
+            case "Storage":
+                self.Storage_RSU_change += new_rack.capacity - old_rack.capacity
+            case "AI":
+                self.AI_RSU_change += new_rack.capacity - old_rack.capacity
 
         self.racks_changed += 1
         self.net_power_change += new_rack.powerNeed - rack.powerNeed
@@ -167,77 +151,6 @@ class RackReplacer:
 
 
         return replace(state, positions=new_positions, racks=new_racks)
-    
-
-
-
-
-
-
-
-    """
-    Green, energy low version of replace_rack
-    """
-
-    def green_replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints):
-        
-        if self.racks_changed >= self.max_moves_per_day:
-            return state
-
-        rack = state.positions[pos]
-
-        if rack.code == "" and state.get_2023_count() == 0:
-            old_code = random.choice(list(self.REPLACEMENT_MAP.keys()))
-
-        elif rack is None or rack.code not in self.REPLACEMENT_MAP:
-            return state
-        
-        else:
-            old_code = rack.code
-
-        new_code = self.REPLACEMENT_MAP[old_code]
-        new_rack = Rack(new_code)
-
-        if state.total_power_kw() + new_rack.powerNeed > constraint.allowed_power_kw():
-            return state
-
-        """
-        Unlike the other version of replace_rack, this one will priorotise keeping as close to the constraint minimums as possible
-        """
-        match new_rack.type:
-            case "Compute":
-                if state.get_rsu_per_service()["Compute"] - rack.capacity > constraint.compute_min:
-                    new_rack = Rack("")
-                else:
-                    self.Compute_RSU_change += new_rack.capacity - rack.capacity
-            case "Storage":
-                if state.get_rsu_per_service()["Storage"] - rack.capacity > constraint.storage_max:
-                    new_rack = Rack("")
-                else:
-                    self.Storage_RSU_change += new_rack.capacity - rack.capacity
-            case "AI":
-                if state.get_rsu_per_service()["AI"] - rack.capacity > constraint.AI_max:
-                    new_rack = Rack("")
-                else:
-                    self.AI_RSU_change += new_rack.capacity - rack.capacity
-
-        new_positions = dict(state.positions)
-        new_racks = dict(state.racks)
-
-        new_positions[pos] = new_rack
-        new_racks[new_rack.code] = new_rack
-
-        self.racks_changed += 1
-        self.net_power_change += new_rack.powerNeed - rack.powerNeed
-        self.net_RSU_change += new_rack.capacity - rack.capacity
-        self._record_change(pos,old_code,new_code)
-
-        return replace(state, positions=new_positions, racks=new_racks)
-
-
-
-
-
 
 
 
