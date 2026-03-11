@@ -70,5 +70,5 @@ def test():
         print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service(), testEngine.history[key].get_type_counts(), testEngine.history[key].get_generation_counts())
 
 
-
-test()
+if __name__ == "__main__":
+    test()
