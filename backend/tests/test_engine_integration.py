@@ -7,7 +7,7 @@ stepping through days, recording history, and rolling back state.
 
 import pytest
 from src.simulation.engine import SimulationEngine
-from src.simulation.state import test_suite as build_test_suite
+from src.simulation.suite_analytics import test_suite as build_test_suite
 
 
 @pytest.fixture
