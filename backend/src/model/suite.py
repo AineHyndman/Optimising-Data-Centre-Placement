@@ -31,31 +31,47 @@ class Suite:
 
         self.rows: List[Row] = [Row(rid) for rid in row_ids]
 
+<<<<<<< HEAD
 
 
     #
     #
     # To be REMOVED, from HERE to:
+=======
+    # gets the total power in kilowatts
+>>>>>>> 186366e (added comments to suite.py)
     def total_power_kw(self) -> int:
         return sum(row.total_power_kw() for row in self.rows)
 
+    # gets the maximum power in kilowatts
     def max_power_kw(self) -> int:
         return int(self.max_power_mw * 1000)
 
+    # get the emergency power in kilowatts
     def emergency_power_kw(self) -> int:
         return int(self.emergency_power_mw * 1000)
 
+    """
+    
+    CHECK: function allowed_power_kw below, changes value depending on whether the emergency power is available or not
+
+    """
+
+    # gets the maximum power and emergency power, so long as it doesn't exceed the constraints
     def allowed_power_kw(self) -> int:
         return self.max_power_kw() + (
             self.emergency_power_kw() if not self.emergencyEvent.cooldown else 0
         )
 
+    # determines if power exceeds the budget
     def is_over_power_budget(self) -> bool:
         return self.total_power_kw() > self.allowed_power_kw()
 
+    # gets the available power in kilowatts
     def available_power_kw(self) -> int:
         return self.allowed_power_kw() - self.total_power_kw()
 
+    # Checks if emergency power is active, if not will activate on True
     def emergency_power(self) -> bool:
         if self.total_power_kw() > self.max_power_kw():
             """
@@ -68,7 +84,6 @@ class Suite:
         else:
             self.emergencyEvent.cooldown = False
             return False
-        # Checks if emergency power is active, if not will activate on True
 
     def check_empty_spaces(self) -> int:
         count = 0
