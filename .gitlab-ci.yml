@@ -1,5 +1,6 @@
 stages:
   - lint
+  - test
   - build
 
 # --- Lint stage: runs on ALL branches ---
@@ -34,6 +35,23 @@ backend_lint:
     - pip install --no-cache-dir --cache-dir ../.pip -r requirements.txt
   script:
     - python -c "from main import app; print('Backend import OK')"
+
+# --- Test stage: runs on ALL branches ---
+
+backend_tests:
+  stage: test
+  tags:
+    - docker
+  image: python:3.11-slim
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths:
+      - .pip/
+  before_script:
+    - cd backend
+    - pip install --no-cache-dir --cache-dir ../.pip -r requirements.txt
+  script:
+    - python -m pytest tests/ -v
 
 # --- Build stage: only on main (uses Kaniko — no privileged runner needed) ---
 
