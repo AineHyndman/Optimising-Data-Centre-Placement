@@ -12,6 +12,7 @@ class SimulationEngine:
         self.current_state = initial_state
         self.rack_replacer = RackReplacer()
 
+    # advances the simulation by one day and returns new suite state
     def step(self) -> SuiteState:
         state = self.current_state
 
@@ -30,10 +31,12 @@ class SimulationEngine:
 
         return new_state
 
+    # advances the simulation forward by a number of days
     def fast_forward(self, days: int):
         for _ in range(days):
             self.step()
 
+    # reverts the simulation to a specific setting and removes any history after it
     def rollback(self, day: int):
         if day not in self.history:
             raise ValueError("Day not in history")
