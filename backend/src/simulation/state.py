@@ -5,7 +5,6 @@ from dataclasses import dataclass, replace
 from typing import Dict, Tuple
 from src.model.rack import Rack
 from src.model.position import Position
-from src.simulation.state import SuiteState, EmergencyState
 
 #Position = Tuple[int, int]
 RackId = str
