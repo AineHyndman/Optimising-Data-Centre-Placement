@@ -16,7 +16,7 @@ from src.simulation.state import SuiteState
 from src.simulation.state import EmergencyState
 from dataclasses import replace
 from src.simulation.constraints import Constraints
-from src.simulation.planners import choose_rack
+from src.simulation.planners import choose_rack, choose_rack_green
 
 class RackReplacer:
     
