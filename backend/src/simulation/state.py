@@ -32,12 +32,15 @@ class SuiteState:
     racks: Dict[RackId, Rack]
     emergencyState: EmergencyState = EmergencyState()
 
+    # get the count of the rack generations
     def get_generation_counts(self): # tested
         return Counter(r.generation for r in self.positions.values() if r.generation != 0)
 
+    # get the count of the rack types
     def get_type_counts(self): # tested
         return Counter(r.type for r in self.positions.values())
 
+    # get the sum of the empty rack positions
     def get_empty_positions(self): # tested
         return sum(1 for r in self.positions.values() if r.generation is None)
 
@@ -48,9 +51,11 @@ class SuiteState:
         return Counter(pos.row for pos in self.positions if self.positions[pos].generation is not None)
 
 
+    # counts all 2023 racks
     def get_2023_count(self): # tested
         return sum(1 for r in self.positions.values() if r.generation == 2023)
 
+    # gets the rsu per service
     def get_rsu_per_service(self): # tested
         temp = {}
         for r in self.positions.values():
@@ -61,10 +66,10 @@ class SuiteState:
     New Functions, migrating from Suite class
     """
 
+    # gets the sum of the total power in kilowatts
     def total_power_kw(self) -> int: # tested
         return sum(r.powerNeed for r in self.positions.values())
     
-
 
 """
 Added suite for testing which uses an alternate version of the Suite
