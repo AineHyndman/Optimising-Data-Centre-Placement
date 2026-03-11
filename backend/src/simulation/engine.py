@@ -12,14 +12,14 @@ class SimulationEngine:
         self.current_state = initial_state
         self.rack_replacer = RackReplacer()
 
-    def step(self) -> SuiteState:
+    def step(self, green: bool) -> SuiteState:
         state = self.current_state
 
         """
         Replaced actions with rack replacer
         """
 
-        state = self.rack_replacer(state)
+        state = self.rack_replacer(state, green)
 
         new_day = self.current_day + 1
         new_state = replace(state, day=new_day)
@@ -30,9 +30,9 @@ class SimulationEngine:
 
         return new_state
 
-    def fast_forward(self, days: int):
+    def fast_forward(self, green: bool, days: int):
         for _ in range(days):
-            self.step()
+            self.step(green)
 
     def rollback(self, day: int):
         if day not in self.history:
@@ -58,14 +58,14 @@ def test():
     #Actual test for the new engine starts here
     testEngine = SimulationEngine(testSuite)
 
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
+    testEngine.step(False)
+    testEngine.step(False)
+    testEngine.step(False)
+    testEngine.step(False)
+    testEngine.step(False)
 
     
-    testEngine.fast_forward(20)
+    testEngine.fast_forward(True, 20)
     for key in testEngine.history.keys():
         print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service(), testEngine.history[key].get_type_counts(), testEngine.history[key].get_generation_counts())
 

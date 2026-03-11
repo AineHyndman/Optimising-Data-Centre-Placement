@@ -42,6 +42,9 @@ def choose_rack(state: SuiteState, old_rack: Rack, constraint: Constraints):
     return new_rack
 
 
+"""
+A green, energy saving, version of choose_rack
+"""
 def choose_rack_green(state: SuiteState, old_rack: Rack, constraint: Constraints):
 
     """
@@ -59,18 +62,27 @@ def choose_rack_green(state: SuiteState, old_rack: Rack, constraint: Constraints
     """
     Checks which type we are dealing with and makes sure no constraints are broken
 
-    If it reachest the min rsu for the service it replaces the 2023 with a 2025 one
+    If it reachest the min rsu for the service it does nothing unless the new rack is the same type and 2023 generation
     """
     match old_rack.type:
         case "Compute":
             if state.get_rsu_per_service()["Compute"] - old_rack.capacity < constraint.compute_min:
-                return new_rack
+                if old_rack.generation == 2023 and old_rack.type == new_rack.type:
+                    return new_rack
+                else:
+                    return ""
         case "Storage":
             if state.get_rsu_per_service()["Storage"] - old_rack.capacity < constraint.storage_min:
-                return new_rack
+                if old_rack.generation == 2023 and old_rack.type == new_rack.type:
+                    return new_rack
+                else:
+                    return ""
         case "AI":
             if state.get_rsu_per_service()["AI"] - old_rack.capacity < constraint.AI_min:
-                return new_rack
+                if old_rack.generation == 2023 and old_rack.type == new_rack.type:
+                    return new_rack
+                else:
+                    return ""
     
     return Rack("")
 
