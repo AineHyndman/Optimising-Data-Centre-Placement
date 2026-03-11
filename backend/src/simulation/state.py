@@ -47,9 +47,10 @@ class SuiteState:
     """
     Below uses int for key instead of the string, like it is int rows.json, might change later if needed
     """
+
+    # get the positions of a the rows 
     def get_row_distribution(self): # tested
         return Counter(pos.row for pos in self.positions if self.positions[pos].generation is not None)
-
 
     # counts all 2023 racks
     def get_2023_count(self): # tested
