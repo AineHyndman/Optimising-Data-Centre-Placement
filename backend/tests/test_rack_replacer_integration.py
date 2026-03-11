@@ -8,7 +8,8 @@ constraint checking, the planner's rack selection, and emergency power handling.
 import pytest
 from dataclasses import replace
 
-from src.simulation.state import SuiteState, EmergencyState, test_suite as build_test_suite
+from src.simulation.state import SuiteState, EmergencyState
+from src.simulation.suite_analytics import test_suite as build_test_suite
 from src.simulation.tasks.rack_replacer import RackReplacer
 from src.simulation.constraints import Constraints
 from src.simulation.planners import choose_rack, get_rsu_ratio
