@@ -31,15 +31,7 @@ class Suite:
 
         self.rows: List[Row] = [Row(rid) for rid in row_ids]
 
-<<<<<<< HEAD
-
-
-    #
-    #
-    # To be REMOVED, from HERE to:
-=======
     # gets the total power in kilowatts
->>>>>>> 186366e (added comments to suite.py)
     def total_power_kw(self) -> int:
         return sum(row.total_power_kw() for row in self.rows)
 
@@ -156,40 +148,40 @@ class Suite:
 
 
 """
-# This is a test below, with a fake simulation of days passing, which will be later done in the full simulation
+    # This is a test below, with a fake simulation of days passing, which will be later done in the full simulation
 
 
-def test_day(mine: Suite()):
-    mine.emergency_power()
-    mine.emergencyEvent.progress()
-    print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power())
-    print(mine.emergencyEvent.available_days())
+    def test_day(mine: Suite()):
+        mine.emergency_power()
+        mine.emergencyEvent.progress()
+        print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power())
+        print(mine.emergencyEvent.available_days())
 
 
-def test():
-    print("Test ")
-    mine = Suite()
-    
-    print(mine.check_rsu_max(""))
-    print(mine.check_rsu_min(""))
-    print(mine.check_empty_spaces())
-    
-    print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power())
-    print(mine.emergencyEvent.available_days())
+    def test():
+        print("Test ")
+        mine = Suite()
+
+        print(mine.check_rsu_max(""))
+        print(mine.check_rsu_min(""))
+        print(mine.check_empty_spaces())
+
+        print(mine.available_power_kw(), " ", mine.max_power_kw(), " ", mine.total_power_kw(), " ", mine.emergency_power())
+        print(mine.emergencyEvent.available_days())
 
 
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
-    test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
+        test_day(mine)
 
 
 
-test()
+    test()
 """
