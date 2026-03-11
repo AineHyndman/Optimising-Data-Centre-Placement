@@ -1,8 +1,7 @@
 from dataclasses import replace
 from typing import Callable, Dict, List
 #from .actions import Action
-from src.simulation.state import SuiteState
-from src.simulation.suite_analytics import test_suite
+from src.simulation.state import SuiteState, test_suite
 from src.simulation.tasks.rack_replacer import RackReplacer
 
 
