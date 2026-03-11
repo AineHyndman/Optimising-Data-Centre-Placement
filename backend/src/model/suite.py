@@ -83,17 +83,7 @@ class Suite:
             count = count + myRow.rack_space()
         return count
         # Returns number of empty racks
-    # HERE
-    #
-    #
-
-
-
-
-
-
-
-
+    
     # To check all input empty string "" or any other string
     def check_rsu_max(self, type: str):
         myDict = self.rsu_totals()
