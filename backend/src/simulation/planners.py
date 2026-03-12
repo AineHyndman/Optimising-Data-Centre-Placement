@@ -67,20 +67,20 @@ def choose_rack_green(state: SuiteState, old_rack: Rack, constraint: Constraints
     match old_rack.type:
         case "Compute":
             if state.get_rsu_per_service()["Compute"] - old_rack.capacity < constraint.compute_min:
-                if old_rack.generation == 2023 and old_rack.type == new_rack.type:
-                    return new_rack
+                if old_rack.generation == 2023:
+                    return Rack("c25")
                 else:
                     return ""
         case "Storage":
             if state.get_rsu_per_service()["Storage"] - old_rack.capacity < constraint.storage_min:
-                if old_rack.generation == 2023 and old_rack.type == new_rack.type:
-                    return new_rack
+                if old_rack.generation == 2023:
+                    return Rack("s25")
                 else:
                     return ""
         case "AI":
             if state.get_rsu_per_service()["AI"] - old_rack.capacity < constraint.AI_min:
-                if old_rack.generation == 2023 and old_rack.type == new_rack.type:
-                    return new_rack
+                if old_rack.generation == 2023:
+                    return Rack("a25")
                 else:
                     return ""
     

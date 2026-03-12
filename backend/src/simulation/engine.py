@@ -58,11 +58,11 @@ def test():
     #Actual test for the new engine starts here
     testEngine = SimulationEngine(testSuite)
 
-    testEngine.step(False)
-    testEngine.step(False)
-    testEngine.step(False)
-    testEngine.step(False)
-    testEngine.step(False)
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
 
     
     testEngine.fast_forward(True, 20)
