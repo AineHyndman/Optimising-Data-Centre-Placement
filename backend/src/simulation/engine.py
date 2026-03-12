@@ -1,3 +1,4 @@
+import os
 from dataclasses import replace
 from typing import Callable, Dict, List
 #from .actions import Action
@@ -52,8 +53,9 @@ class SimulationEngine:
 To use the test, just uncomment it
 """
 
-"""
 def test():
+    if os.path.exists("history.jsonl"):
+        os.remove("history.jsonl")
 
     #Setting up the test version of SuiteState
     testSuite = test_suite()
@@ -75,4 +77,3 @@ def test():
 
 
 test()
-"""
