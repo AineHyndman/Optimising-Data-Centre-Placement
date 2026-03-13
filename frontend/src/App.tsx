@@ -27,7 +27,6 @@ function App() {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setLoading(true);
     setError('');
     setSelectedSuiteIndex(0);
     setPlannedMoves([]); 
@@ -45,7 +44,6 @@ function App() {
     } catch {
       setError('Failed to process file. Is Docker running?');
     } finally {
-      setLoading(false);
     }
   };
 
