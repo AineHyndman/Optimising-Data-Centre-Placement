@@ -12,7 +12,7 @@ class SimulationEngine:
         self.current_state = initial_state
         self.rack_replacer = RackReplacer()
 
-    def step(self, green: bool) -> SuiteState:
+    def step(self, green: bool = False) -> SuiteState:
         state = self.current_state
 
         """
@@ -30,7 +30,7 @@ class SimulationEngine:
 
         return new_state
 
-    def fast_forward(self, green: bool, days: int):
+    def fast_forward(self, days: int, green: bool = False):
         for _ in range(days):
             self.step(green)
 

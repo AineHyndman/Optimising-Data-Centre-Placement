@@ -47,7 +47,7 @@ class RackReplacer:
 
         self.history: List[dict] = []
     
-    def __call__(self, state: SuiteState, green: bool) -> SuiteState:
+    def __call__(self, state: SuiteState, green: bool = False) -> SuiteState:
         # Added a day incrementer for the history
         self.day += 1
         constraint = Constraints(state)
@@ -56,7 +56,7 @@ class RackReplacer:
     def is_valid_rack(self, rack: Optional[Rack]) -> bool:
         return rack is not None and rack.code in self.REPLACEMENT_MAP
 
-    def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints, green: bool):
+    def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints, green: bool = False):
         
         if self.racks_changed >= self.max_moves_per_day:
             return state
@@ -240,7 +240,7 @@ class RackReplacer:
         self.Storage_RSU_change = 0.0
         self.AI_RSU_change = 0.0
 
-    def replace_multiple(self, state: SuiteState, constraint: Constraints, green: bool) -> SuiteState:
+    def replace_multiple(self, state: SuiteState, constraint: Constraints, green: bool = False) -> SuiteState:
         """
         Added a second version of the loop, one for regular and one for emergency power handling
         """
