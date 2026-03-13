@@ -1,6 +1,8 @@
 stages:
   - lint
+  - test
   - build
+  - deploy
 
 # --- Lint stage: runs on ALL branches ---
 
@@ -35,6 +37,23 @@ backend_lint:
   script:
     - python -c "from main import app; print('Backend import OK')"
 
+# --- Test stage: runs on ALL branches ---
+
+backend_tests:
+  stage: test
+  tags:
+    - docker
+  image: python:3.11-slim
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths:
+      - .pip/
+  before_script:
+    - cd backend
+    - pip install --no-cache-dir --cache-dir ../.pip -r requirements.txt
+  script:
+    - python -m pytest tests/ -v
+
 # --- Build stage: only on main (uses Kaniko — no privileged runner needed) ---
 
 build_backend:
@@ -46,13 +65,18 @@ build_backend:
     entrypoint: [""]
   before_script:
     - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - cp "$GCP_SA_KEY" /kaniko/gcp-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=/kaniko/gcp-key.json
+    - |
+      cat > /kaniko/.docker/config.json << EOF
+      {"credHelpers":{"europe-north1-docker.pkg.dev":"gcr"}}
+      EOF
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/backend"
       --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}/backend:${CI_COMMIT_SHA}"
-      --destination "${CI_REGISTRY_IMAGE}/backend:latest"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:latest"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
@@ -65,12 +89,51 @@ build_frontend:
     entrypoint: [""]
   before_script:
     - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - cp "$GCP_SA_KEY" /kaniko/gcp-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=/kaniko/gcp-key.json
+    - |
+      cat > /kaniko/.docker/config.json << EOF
+      {"credHelpers":{"europe-north1-docker.pkg.dev":"gcr"}}
+      EOF
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/frontend"
       --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}/frontend:${CI_COMMIT_SHA}"
-      --destination "${CI_REGISTRY_IMAGE}/frontend:latest"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:latest"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+
+deploy_backend:
+  stage: deploy
+  tags:
+    - docker
+  image: google/cloud-sdk:slim
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
+    - gcloud config set project $GCP_PROJECT
+    - gcloud run deploy backend
+      --image europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}
+      --region europe-north1
+      --platform managed
+      --allow-unauthenticated
+      --port 8000
+
+deploy_frontend:
+  stage: deploy
+  tags:
+    - docker
+  image: google/cloud-sdk:slim
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
+    - gcloud config set project $GCP_PROJECT
+    - gcloud run deploy frontend
+      --image europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}
+      --region europe-north1
+      --platform managed
+      --allow-unauthenticated
+      --port 5173

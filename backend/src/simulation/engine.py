@@ -34,6 +34,7 @@ class SimulationEngine:
         for _ in range(days):
             self.step(green)
 
+    # reverts the simulation to a specific setting and removes any history after it
     def rollback(self, day: int):
         if day not in self.history:
             raise ValueError("Day not in history")

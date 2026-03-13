@@ -44,6 +44,8 @@ class Rack:
         ):
             raise ValueError("Not valid code")
 
+    # representing the rack class and all its attributes
+
     def __repr__(self):
         return (
             f"Rack=(code={self.code}, "

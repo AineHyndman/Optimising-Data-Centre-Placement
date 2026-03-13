@@ -7,7 +7,8 @@ from src.simulation.constraints import Constraints
 
 from typing import Tuple
 
-
+# chooses the rack replacement type based on RSU utilisation
+# rack type with lowest RSU ratio is prioritised to balance service capacity
 def choose_rack(state: SuiteState, old_rack: Rack, constraint: Constraints):
 
     """
@@ -83,38 +84,3 @@ def get_rsu_ratio(state: SuiteState, constraint: Constraints):
     temp["a25"] = (state.get_rsu_per_service()["AI"] - constraint.AI_min) / (constraint.AI_max - constraint.AI_min)
     return temp
 
-
-
-
-
-##def replace_rack(state: SuiteState, position: Tuple[int,int], new_rack: Rack) -> SuiteState:
-##    positions = state.positions.copy()
-##    racks = state.racks.copy()
-##
-##    positions[position] = new_rack
-##    racks[new_rack.rack_id] = new_rack
-##
-##    return dc_replace(state, positions=positions, racks=racks)
-
-##def example_planner(state: SuiteState) -> list:
-##    actions = []
-##    toggle = True
-##
-##    for pos, rack in state.positions.items():
-##        if rack is None:
-##            rack_id = f"{pos[0]}-{pos[1]}"
-##            new_rack = Rack(
-##                rack_id=rack_id,
-##                generation="A25" if toggle else "C25",
-##                rack_type="compute",
-##                service="compute",
-##                year=2023,
-##                color="blue" if toggle else "green"
-##            )
-##            toggle = not toggle
-##            actions.append(lambda s, p=pos, r=new_rack: replace_rack(s,p,r))
-##
-##    return actions
-
-#def no_op_planner(state: SuiteState) -> List[Action]:
-#    return []
