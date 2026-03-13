@@ -7,6 +7,17 @@ import { Sidebar } from './Sidebar';
 import { RackSelectorModal } from './RackSelectorModal';
 import { WeeklySummary } from './WeeklySummary'; // NEW IMPORT
 
+const LOCAL_API = 'http://localhost:8000';
+const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
+
+async function getApiBase(): Promise<string> {
+  try {
+    const res = await fetch(`${LOCAL_API}/`, { method: 'HEAD', signal: AbortSignal.timeout(1000) });
+    if (res.ok) return LOCAL_API;
+  } catch { /* localhost not available */ }
+  return REMOTE_API;
+}
+
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
   const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0);
@@ -35,7 +46,8 @@ function App() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await fetch('http://localhost:8000/upload-plan', { method: 'POST', body: formData });
+      const api = await getApiBase();
+      const response = await fetch(`${api}/upload-plan`, { method: 'POST', body: formData });
       if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
       const json = await response.json();
       setPlan(json);
@@ -97,7 +109,8 @@ function App() {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:8000/schedule?days=30', {
+      const api = await getApiBase();
+      const response = await fetch(`${api}/schedule?days=30`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(plan)
