@@ -65,7 +65,7 @@ build_backend:
     entrypoint: [""]
   before_script:
     - mkdir -p /kaniko/.docker
-    - echo "$GCP_SA_KEY" > /kaniko/gcp-key.json
+    - cp "$GCP_SA_KEY" /kaniko/gcp-key.json
     - export GOOGLE_APPLICATION_CREDENTIALS=/kaniko/gcp-key.json
     - |
       cat > /kaniko/.docker/config.json << EOF
@@ -89,7 +89,7 @@ build_frontend:
     entrypoint: [""]
   before_script:
     - mkdir -p /kaniko/.docker
-    - echo "$GCP_SA_KEY" > /kaniko/gcp-key.json
+    - cp "$GCP_SA_KEY" /kaniko/gcp-key.json
     - export GOOGLE_APPLICATION_CREDENTIALS=/kaniko/gcp-key.json
     - |
       cat > /kaniko/.docker/config.json << EOF
@@ -112,7 +112,7 @@ deploy_backend:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   script:
-    - echo "$GCP_SA_KEY" | gcloud auth activate-service-account --key-file=-
+    - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
     - gcloud config set project $GCP_PROJECT
     - gcloud run deploy backend
       --image europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}
@@ -129,7 +129,7 @@ deploy_frontend:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   script:
-    - echo "$GCP_SA_KEY" | gcloud auth activate-service-account --key-file=-
+    - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
     - gcloud config set project $GCP_PROJECT
     - gcloud run deploy frontend
       --image europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}
