@@ -69,14 +69,14 @@ build_backend:
     - export GOOGLE_APPLICATION_CREDENTIALS=/kaniko/gcp-key.json
     - |
       cat > /kaniko/.docker/config.json << EOF
-      {"credHelpers":{"europe-west1-docker.pkg.dev":"gcr"}}
+      {"credHelpers":{"europe-north1-docker.pkg.dev":"gcr"}}
       EOF
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/backend"
       --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
-      --destination "europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}"
-      --destination "europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:latest"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:latest"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
@@ -93,14 +93,14 @@ build_frontend:
     - export GOOGLE_APPLICATION_CREDENTIALS=/kaniko/gcp-key.json
     - |
       cat > /kaniko/.docker/config.json << EOF
-      {"credHelpers":{"europe-west1-docker.pkg.dev":"gcr"}}
+      {"credHelpers":{"europe-north1-docker.pkg.dev":"gcr"}}
       EOF
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/frontend"
       --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
-      --destination "europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}"
-      --destination "europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:latest"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}"
+      --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:latest"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
@@ -115,8 +115,8 @@ deploy_backend:
     - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
     - gcloud config set project $GCP_PROJECT
     - gcloud run deploy backend
-      --image europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}
-      --region europe-west1
+      --image europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}
+      --region europe-north1
       --platform managed
       --allow-unauthenticated
       --port 8000
@@ -132,8 +132,8 @@ deploy_frontend:
     - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
     - gcloud config set project $GCP_PROJECT
     - gcloud run deploy frontend
-      --image europe-west1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}
-      --region europe-west1
+      --image europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}
+      --region europe-north1
       --platform managed
       --allow-unauthenticated
       --port 5173
