@@ -47,6 +47,36 @@ class SimulationEngine:
         for d in list(self.history.keys()):
             if d > day:
                 del self.history[d]
+   
+    def compare_power_before_after(self, before_day: int, after_day: int) -> dict:
+        
+        if before_day not in self.history:
+            raise ValueError(f"Day {before_day} not in history")
+
+        if after_day not in self.history:
+            raise ValueError(f"Day {after_day} not in history")
+
+        before_state = self.history[before_day]
+        after_state = self.history[after_day]
+
+        before_power = before_state.total_power_kw()
+        after_power = after_state.total_power_kw()
+
+        absolute_change = after_power - before_power
+
+        if before_power == 0:
+            percentage_change = None
+        else:
+            percentage_change = (absolute_change / before_power) * 100
+
+        return {
+            "before_day": before_day,
+            "after_day": after_day,
+            "before_power_kw": before_power,
+            "after_power_kw": after_power,
+            "absolute_change_kw": absolute_change,
+            "percentage_change": round(percentage_change, 2) if percentage_change is not None else None,
+        }
 
 
 
