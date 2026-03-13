@@ -43,7 +43,6 @@ function App() {
       setPlan(json);
     } catch {
       setError('Failed to process file. Is Docker running?');
-    } finally {
     }
   };
 
