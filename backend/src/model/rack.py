@@ -1,4 +1,5 @@
 import json
+
 # Opens "racks.json" as a readable file
 with open("src/utils/json/racks.json", "r") as rackfile:
     # Build a dictionary with Codes for keys
@@ -55,3 +56,9 @@ class Rack:
             f"capacity={self.capacity}, "
             f"color={self.color})"
         )
+
+    def rsu_per_kw(self) -> float:
+        if self.powerNeed is None or self.capacity is None:
+            raise ValueError("Rack values not initialized")
+
+        return self.capacity / self.powerNeed
