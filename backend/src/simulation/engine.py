@@ -52,7 +52,7 @@ class SimulationEngine:
 """
 To use the test, just uncomment it
 """
-
+"""
 def test():
     if os.path.exists("history.jsonl"):
         os.remove("history.jsonl")
@@ -77,3 +77,4 @@ def test():
 
 
 test()
+"""
