@@ -7,6 +7,8 @@ import { Sidebar } from './Sidebar';
 import { RackSelectorModal } from './RackSelectorModal';
 import { WeeklySummary } from './WeeklySummary'; // NEW IMPORT
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
   const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0);
@@ -37,7 +39,7 @@ function App() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await fetch('http://localhost:8000/upload-plan', { method: 'POST', body: formData });
+      const response = await fetch(`${API_BASE}/upload-plan`, { method: 'POST', body: formData });
       if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
       const json = await response.json();
       setPlan(json);
@@ -80,7 +82,7 @@ function App() {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:8000/schedule?days=30', {
+      const response = await fetch(`${API_BASE}/schedule?days=30`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(plan)
