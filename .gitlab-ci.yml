@@ -70,6 +70,7 @@ build_frontend:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/frontend"
       --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
+      --build-arg "VITE_API_URL=https://backend-125308697189.europe-north1.run.app"
       --destination "${CI_REGISTRY_IMAGE}/frontend:${CI_COMMIT_SHA}"
       --destination "${CI_REGISTRY_IMAGE}/frontend:latest"
   rules:

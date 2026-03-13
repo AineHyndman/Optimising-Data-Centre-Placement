@@ -13,7 +13,6 @@ function App() {
   const [plan, setPlan] = useState<ClusterPlan | null>(null);
   const [selectedSuiteIndex, setSelectedSuiteIndex] = useState<number>(0);
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string>('');
   const [viewMode, setViewMode] = useState<'type' | 'power'>('type');
   
