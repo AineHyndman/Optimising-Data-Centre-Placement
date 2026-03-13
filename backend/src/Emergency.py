@@ -5,10 +5,12 @@ class EmergencyPower:
         self.active = False
         self.cooldown = False
 
+    # resets number of days to 0
     def reset(self):
         self.days = 0
         self.active = False
 
+    # returns the number of remaining available days, otherwise returns 0 days if in cooldown
     def available_days(self) -> int:
         return 0 if self.cooldown else 7 - self.days
 

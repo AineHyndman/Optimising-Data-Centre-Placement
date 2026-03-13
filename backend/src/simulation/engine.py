@@ -1,7 +1,8 @@
+import os
 from dataclasses import replace
 from typing import Callable, Dict, List
-from .actions import Action
-from src.domain.models import Day, SuiteState
+#from .actions import Action
+from src.simulation.state import SuiteState, test_suite
 from src.simulation.tasks.rack_replacer import RackReplacer
 
 
@@ -12,11 +13,14 @@ class SimulationEngine:
         self.current_state = initial_state
         self.rack_replacer = RackReplacer()
 
-    def step(self, actions: List[Action]) -> SuiteState:
+    def step(self, green: bool = False) -> SuiteState:
         state = self.current_state
 
-        for action in actions:
-            state = action(state)
+        """
+        Replaced actions with rack replacer
+        """
+
+        state = self.rack_replacer(state, green)
 
         new_day = self.current_day + 1
         new_state = replace(state, day=new_day)
@@ -27,12 +31,12 @@ class SimulationEngine:
 
         return new_state
 
-    def fast_forward(self, days: int, planner: Callable[[SuiteState], List[Action]]):
+    def fast_forward(self, days: int, green: bool = False):
         for _ in range(days):
-            actions = planner(self.current_state)
-            self.step(actions)
+            self.step(green)
 
-    def rollback(self, day: Day):
+    # reverts the simulation to a specific setting and removes any history after it
+    def rollback(self, day: int):
         if day not in self.history:
             raise ValueError("Day not in history")
 
@@ -42,3 +46,35 @@ class SimulationEngine:
         for d in list(self.history.keys()):
             if d > day:
                 del self.history[d]
+
+
+
+"""
+To use the test, just uncomment it
+"""
+"""
+def test():
+    if os.path.exists("history.jsonl"):
+        os.remove("history.jsonl")
+
+    #Setting up the test version of SuiteState
+    testSuite = test_suite()
+
+    #Actual test for the new engine starts here
+    testEngine = SimulationEngine(testSuite)
+
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
+
+    
+    testEngine.fast_forward(True, 20)
+    for key in testEngine.history.keys():
+        print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service(), testEngine.history[key].get_type_counts(), testEngine.history[key].get_generation_counts())
+
+
+
+test()
+"""

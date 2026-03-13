@@ -46,6 +46,7 @@ function App() {
     }
   };
 
+
   const currentSuite = plan?.cluster_plans?.[selectedSuiteIndex];
   const baseGrid = currentSuite ? parsePositionsToGrid(currentSuite.positions) : null;
 
@@ -57,6 +58,26 @@ function App() {
     });
     return newGrid;
   }, [baseGrid, plannedMoves]);
+
+  const modifiedSuite = useMemo(() => {
+    if (!currentSuite || !plan || plannedMoves.length === 0) return currentSuite;
+    const moveMap = new Map(plannedMoves.map(m => [`${m.row},${m.col}`, m.rackType]));
+    const rackSpecMap = new Map(plan.rack_types.map(r => [r.name, r]));
+    const updatedPositions = currentSuite.positions.map(pos => {
+      const key = `${Number(pos.row)},${Number(pos.position)}`;
+      return moveMap.has(key) ? { ...pos, rack_type: moveMap.get(key) ?? '' } : pos;
+    });
+    let totalPower = 0, compute = 0, storage = 0, ai = 0;
+    updatedPositions.forEach(pos => {
+      const spec = pos.rack_type ? rackSpecMap.get(pos.rack_type) : undefined;
+      if (!spec) return;
+      totalPower += spec.power_need;
+      compute += spec.resources.compute;
+      storage += spec.resources.storage;
+      ai += spec.resources.ai;
+    });
+    return { ...currentSuite, positions: updatedPositions, total_power_usage: totalPower, compute, storage, ai };
+  }, [currentSuite, plannedMoves, plan]);
 
   const handleRackSelect = (newType: string | null) => {
     if (!modalPos || !localGrid) return;
@@ -116,20 +137,19 @@ function App() {
         </h2>
         <div className="flex gap-3 items-center">
           {plan && (
-            <select 
-              value={selectedSuiteIndex} 
-              onChange={(e) => { 
-                setSelectedSuiteIndex(Number(e.target.value)); 
+            <select
+              value={selectedSuiteIndex}
+              onChange={(e) => {
+                setSelectedSuiteIndex(Number(e.target.value));
                 setPlannedMoves([]);
                 setActiveTab('layout');
-              }} 
+              }}
               className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]"
             >
               {plan.cluster_plans.map((suite, index) => <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>)}
             </select>
           )}
-          {/* UPDATED BUTTON */}
-          <button 
+          <button
             onClick={handleRunOptimization}
             disabled={isSimulating || !plan}
             className={`py-2 px-5 rounded-md text-[13px] font-bold flex items-center gap-1.5 transition-colors
@@ -195,7 +215,7 @@ function App() {
               )}
             </div>
             
-            <Sidebar suite={currentSuite} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} />
+            <Sidebar suite={modifiedSuite!} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} />
           </div>
         )
       ) : (

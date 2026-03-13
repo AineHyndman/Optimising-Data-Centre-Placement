@@ -1,6 +1,6 @@
 """
 
-I added a green rack replace option, find below
+I switched the old rack type to the new one
 
 """
 
@@ -16,15 +16,13 @@ from src.simulation.state import SuiteState
 from src.simulation.state import EmergencyState
 from dataclasses import replace
 from src.simulation.constraints import Constraints
-from src.simulation.planners import choose_rack, choose_rack_green
 
 class RackReplacer:
     
     REPLACEMENT_MAP = {
         "c23": "c25",
         "s23": "s25",
-        "a23": "a25",
-        "": ""
+        "a23": "a25"
     }
 
     
@@ -47,65 +45,69 @@ class RackReplacer:
 
         self.history: List[dict] = []
     
-    def __call__(self, state: SuiteState, green: bool = False) -> SuiteState:
+    def __call__(self, state: SuiteState) -> SuiteState:
         # Added a day incrementer for the history
         self.day += 1
         constraint = Constraints(state)
-        return self.replace_multiple(state, constraint, green)
+        return self.replace_multiple(state, constraint)
 
     def is_valid_rack(self, rack: Optional[Rack]) -> bool:
         return rack is not None and rack.code in self.REPLACEMENT_MAP
 
-    def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints, green: bool = False):
+    def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints):
         
         if self.racks_changed >= self.max_moves_per_day:
             return state
 
         rack = state.positions[pos]
 
-        if green == True and state.get_2023_count() == 0:
-            if rack is None or rack.generation != 2025:
-                return state
-        elif rack is None or rack.generation != 2023:
+        """
+
+        I added a change so that if the rack space is empty it chooses a random rack to put into that
+        It only starts working after all 2023 racks are replaced
+
+        """
+
+        if rack.code == "" and state.get_2023_count() == 0:
+            old_code = random.choice(list(self.REPLACEMENT_MAP.keys()))
+
+        elif rack is None or rack.code not in self.REPLACEMENT_MAP:
             return state
         
-        # Uses new choose_rack function from planners.py
-        if not green:
-            new_rack = choose_rack(state, rack, constraint)
         else:
-            new_rack = choose_rack_green(state, rack, constraint)
+            old_code = rack.code
 
-        # If new_rack returned "", that means nothing changed, return state
-        if new_rack == "":
-            return state
-
-        old_code = rack.code
-        old_rack = Rack(old_code)
-
-        # If the same type is popped out, it just returns state
-        if old_code == new_rack.code:
-            return state
-        
+        new_code = self.REPLACEMENT_MAP[old_code]
+        new_rack = Rack(new_code)
 
         if state.total_power_kw() + new_rack.powerNeed > constraint.allowed_power_kw():
             return state
 
-        new_code = new_rack.code
+        """
+        checks which type we are dealing with and makes sure no limits are surpassed
+        """
+        match new_rack.type:
+            case "Compute":
+                if state.get_rsu_per_service()["Compute"] + new_rack.capacity - rack.capacity > constraint.compute_max:
+                    new_rack = Rack("")
+                else:
+                    self.Compute_RSU_change += new_rack.capacity - rack.capacity
+            case "Storage":
+                if state.get_rsu_per_service()["Storage"] + new_rack.capacity - rack.capacity > constraint.storage_max:
+                    new_rack = Rack("")
+                else:
+                    self.Storage_RSU_change += new_rack.capacity - rack.capacity
+            case "AI":
+                if state.get_rsu_per_service()["AI"] + new_rack.capacity - rack.capacity > constraint.AI_max:
+                    new_rack = Rack("")
+                else:
+                    self.AI_RSU_change += new_rack.capacity - rack.capacity
 
         new_positions = dict(state.positions)
         new_racks = dict(state.racks)
 
         new_positions[pos] = new_rack
         new_racks[new_rack.code] = new_rack
-
-
-        match new_rack.type:
-            case "Compute":
-                self.Compute_RSU_change += new_rack.capacity - old_rack.capacity
-            case "Storage":
-                self.Storage_RSU_change += new_rack.capacity - old_rack.capacity
-            case "AI":
-                self.AI_RSU_change += new_rack.capacity - old_rack.capacity
 
         self.racks_changed += 1
         self.net_power_change += new_rack.powerNeed - rack.powerNeed
@@ -162,11 +164,10 @@ class RackReplacer:
 
 
         return replace(state, positions=new_positions, racks=new_racks)
-
-
+    
 
     """
-    Function which returns state with updated emergency class
+    New function which returns state with updated emergency class
     """
     def update_emergency(self, state: SuiteState, constraint: Constraints):
         emergency_days = state.emergencyState.emergency_days
@@ -240,7 +241,7 @@ class RackReplacer:
         self.Storage_RSU_change = 0.0
         self.AI_RSU_change = 0.0
 
-    def replace_multiple(self, state: SuiteState, constraint: Constraints, green: bool = False) -> SuiteState:
+    def replace_multiple(self, state: SuiteState, constraint: Constraints) -> SuiteState:
         """
         Added a second version of the loop, one for regular and one for emergency power handling
         """
@@ -248,7 +249,7 @@ class RackReplacer:
             for pos in state.positions.keys():
                 if self.racks_changed >= self.max_moves_per_day:
                     break
-                state = self.replace_rack(state, pos, constraint, green)
+                state = self.replace_rack(state, pos, constraint)
         else:
             for pos in state.positions.keys():
                 if self.racks_changed >= self.max_moves_per_day:
