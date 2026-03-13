@@ -16,7 +16,7 @@ from src.simulation.state import SuiteState
 from src.simulation.state import EmergencyState
 from dataclasses import replace
 from src.simulation.constraints import Constraints
-from src.simulation.planners import choose_rack
+from src.simulation.planners import choose_rack, choose_rack_green
 
 class RackReplacer:
     
@@ -47,33 +47,41 @@ class RackReplacer:
 
         self.history: List[dict] = []
     
-    def __call__(self, state: SuiteState) -> SuiteState:
+    def __call__(self, state: SuiteState, green: bool) -> SuiteState:
         # Added a day incrementer for the history
         self.day += 1
         constraint = Constraints(state)
-        return self.replace_multiple(state, constraint)
+        return self.replace_multiple(state, constraint, green)
 
     def is_valid_rack(self, rack: Optional[Rack]) -> bool:
         return rack is not None and rack.code in self.REPLACEMENT_MAP
 
-    def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints):
+    def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints, green: bool):
         
         if self.racks_changed >= self.max_moves_per_day:
             return state
 
         rack = state.positions[pos]
 
-
-        if rack is None or rack.code not in self.REPLACEMENT_MAP:
+        if green == True and state.get_2023_count() == 0:
+            if rack is None or rack.generation != 2025:
+                return state
+        elif rack is None or rack.generation != 2023:
             return state
         
+        # Uses new choose_rack function from planners.py
+        if not green:
+            new_rack = choose_rack(state, rack, constraint)
+        else:
+            new_rack = choose_rack_green(state, rack, constraint)
+
+        # If new_rack returned "", that means nothing changed, return state
+        if new_rack == "":
+            return state
 
         old_code = rack.code
         old_rack = Rack(old_code)
 
-        # Uses new choose_rack function from planners.py
-        new_rack = choose_rack(state, rack, constraint)
-        
         # If the same type is popped out, it just returns state
         if old_code == new_rack.code:
             return state
@@ -232,7 +240,7 @@ class RackReplacer:
         self.Storage_RSU_change = 0.0
         self.AI_RSU_change = 0.0
 
-    def replace_multiple(self, state: SuiteState, constraint: Constraints) -> SuiteState:
+    def replace_multiple(self, state: SuiteState, constraint: Constraints, green: bool) -> SuiteState:
         """
         Added a second version of the loop, one for regular and one for emergency power handling
         """
@@ -240,7 +248,7 @@ class RackReplacer:
             for pos in state.positions.keys():
                 if self.racks_changed >= self.max_moves_per_day:
                     break
-                state = self.replace_rack(state, pos, constraint)
+                state = self.replace_rack(state, pos, constraint, green)
         else:
             for pos in state.positions.keys():
                 if self.racks_changed >= self.max_moves_per_day:

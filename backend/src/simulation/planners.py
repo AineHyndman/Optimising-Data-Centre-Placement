@@ -43,6 +43,39 @@ def choose_rack(state: SuiteState, old_rack: Rack, constraint: Constraints):
     return new_rack
 
 
+"""
+A green, energy saving, version of choose_rack, also more efficient
+"""
+def choose_rack_green(state: SuiteState, old_rack: Rack, constraint: Constraints):
+
+    """
+    Checks which type we are dealing with and makes sure no constraints are broken
+
+    If it reachest the min rsu for the service it does nothing, unless the current rack is generation 2023
+    """
+    match old_rack.type:
+        case "Compute":
+            if state.get_rsu_per_service()["Compute"] - old_rack.capacity < constraint.compute_min:
+                if old_rack.generation == 2023:
+                    return Rack("c25")
+                else:
+                    return ""
+        case "Storage":
+            if state.get_rsu_per_service()["Storage"] - old_rack.capacity < constraint.storage_min:
+                if old_rack.generation == 2023:
+                    return Rack("s25")
+                else:
+                    return ""
+        case "AI":
+            if state.get_rsu_per_service()["AI"] - old_rack.capacity < constraint.AI_min:
+                if old_rack.generation == 2023:
+                    return Rack("a25")
+                else:
+                    return ""
+    
+    return Rack("")
+
+
 # Gets the ratio of the rsu
 def get_rsu_ratio(state: SuiteState, constraint: Constraints):
     temp = {}

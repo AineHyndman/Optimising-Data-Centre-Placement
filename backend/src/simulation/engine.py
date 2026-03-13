@@ -12,15 +12,14 @@ class SimulationEngine:
         self.current_state = initial_state
         self.rack_replacer = RackReplacer()
 
-    # advances the simulation by one day and returns new suite state
-    def step(self) -> SuiteState:
+    def step(self, green: bool) -> SuiteState:
         state = self.current_state
 
         """
         Replaced actions with rack replacer
         """
 
-        state = self.rack_replacer(state)
+        state = self.rack_replacer(state, green)
 
         new_day = self.current_day + 1
         new_state = replace(state, day=new_day)
@@ -31,10 +30,9 @@ class SimulationEngine:
 
         return new_state
 
-    # advances the simulation forward by a number of days
-    def fast_forward(self, days: int):
+    def fast_forward(self, green: bool, days: int):
         for _ in range(days):
-            self.step()
+            self.step(green)
 
     # reverts the simulation to a specific setting and removes any history after it
     def rollback(self, day: int):
@@ -51,7 +49,9 @@ class SimulationEngine:
 
 
 """
-Setting up the test for it
+To use the test, just uncomment it
+"""
+
 """
 def test():
 
@@ -61,17 +61,18 @@ def test():
     #Actual test for the new engine starts here
     testEngine = SimulationEngine(testSuite)
 
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
-    testEngine.step()
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
+    testEngine.step(True)
 
     
-    testEngine.fast_forward(20)
+    testEngine.fast_forward(True, 20)
     for key in testEngine.history.keys():
         print(testEngine.history[key].get_2023_count(), testEngine.history[key].get_rsu_per_service(), testEngine.history[key].get_type_counts(), testEngine.history[key].get_generation_counts())
 
 
-if __name__ == "__main__":
-    test()
+
+test()
+"""
