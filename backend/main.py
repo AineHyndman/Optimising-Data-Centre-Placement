@@ -144,12 +144,12 @@ async def schedule_plan(plan: PlanData, days: int = 30):
         suite_state = plan_to_suite_state(plan, suite_index=0)
         engine = SimulationEngine(suite_state)
  
-        # Run the full simulation — this writes history.jsonl via RackReplacer
+        # Run the full simulation - this writes history.jsonl via RackReplacer
         engine.fast_forward(days)
  
         # Now read weekly summaries from the history file
         checker = CheckData()
-        num_weeks = (days + 6) // 7  # ceiling division
+        num_weeks = (days + 6) // 7
         summaries = []
  
         for week in range(num_weeks):
