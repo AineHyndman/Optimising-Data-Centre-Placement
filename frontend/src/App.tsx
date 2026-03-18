@@ -12,7 +12,7 @@ const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
 
 async function getApiBase(): Promise<string> {
   try {
-    const res = await fetch(`${LOCAL_API}/`, { method: 'HEAD', signal: AbortSignal.timeout(1000) });
+    const res = await fetch(`${LOCAL_API}/`, { method: 'GET', signal: AbortSignal.timeout(1000) });
     if (res.ok) return LOCAL_API;
   } catch { /* localhost not available */ }
   return REMOTE_API;

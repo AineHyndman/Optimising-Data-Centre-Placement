@@ -1,11 +1,18 @@
 import json
 
+import os
+from src.simulation.check_data import CheckData
+from pydantic import BaseModel
+from typing import List
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from src.simulation.engine import SimulationEngine
 from src.simulation.tasks.rack_replacer import RackReplacer
 from copy import deepcopy
-from src.domain.models import Position, Rack, PlanData, SuitePlan, SuiteState
+from src.simulation.state import SuiteState as SimSuiteState, EmergencyState
+from src.model.rack import Rack as SimRack
+from src.model.position import Position as SimPosition
+from src.domain.models import PlanData, Position, SuitePlan
 
 #from src.simulation_engine.planners import example_planner
 
@@ -21,34 +28,21 @@ app.add_middleware(
 )
 # ---------------------------------------------
 
-def plan_to_suite_state(plan: PlanData, suite_index: int = 0) -> SuiteState:
-        suite: SuitePlan = plan.cluster_plans[suite_index]
+def plan_to_suite_state(plan: PlanData, suite_index: int = 0):
+    suite = plan.cluster_plans[suite_index]
+    positions_dict = {}
+    racks_dict = {}
 
-        positions_dict = {}
-        racks_dict = {}
+    for pos in suite.positions:
+        code = pos.rack_type.lower() if pos.rack_type and pos.rack_type != "empty" else ""
+        sim_pos = SimPosition(suite=suite_index, row=int(pos.row), position=int(pos.position))
+        rack = SimRack(code)
+        positions_dict[sim_pos] = rack
+        racks_dict[code] = rack
 
-        for i, pos in enumerate(suite.positions):
-            rack = None
+    return SimSuiteState(day=0, positions=positions_dict, racks=racks_dict, emergencyState=EmergencyState())
 
-            if hasattr(pos, "rack_type") and pos.rack_type != "empty":
-                
-
-                rack_id = f"{pos.row}-{pos.position}"
-                rack = Rack(
-                    rack_id=rack_id,
-                    generation=pos.rack_type,
-                    rack_type=pos.rack_type,
-                    service="unknown",
-                    year=2023,
-                    color="gray"
-                )
-                racks_dict[rack_id] = rack
-
-            positions_dict[(int(pos.row), int(pos.position))] = rack
-        
-        return SuiteState(day=0, positions=positions_dict, racks=racks_dict)
-
-def suite_state_to_plan(suite_state: SuiteState, original_plan: PlanData, suite_index: int = 0) -> PlanData:
+def suite_state_to_plan(suite_state: SimSuiteState, original_plan: PlanData, suite_index: int = 0) -> PlanData:
     plan = deepcopy(original_plan)
     suite = plan.cluster_plans[suite_index]
 
@@ -128,3 +122,59 @@ async def optimize_plan(plan: PlanData, days: int = 1):
         print("Error during optimization:", str(e))
         raise HTTPException(status_code=422, detail=str(e))
 
+class RsuTotals(BaseModel):
+    compute: float
+    storage: float
+    ai: float
+
+class WeeklySummaryResponse(BaseModel):
+    week: int
+    racks_replaced: int
+    power_saved: float
+    total_power_usage: float
+    rsu_totals: RsuTotals
+
+@app.post("/schedule")
+async def schedule_plan(plan: PlanData, days: int = 30):
+    try:
+        # Clean up any previous run's history
+        if os.path.exists("history.jsonl"):
+            os.remove("history.jsonl")
+ 
+        suite_state = plan_to_suite_state(plan, suite_index=0)
+        engine = SimulationEngine(suite_state)
+ 
+        # Run the full simulation — this writes history.jsonl via RackReplacer
+        engine.fast_forward(days)
+ 
+        # Now read weekly summaries from the history file
+        checker = CheckData()
+        num_weeks = (days + 6) // 7  # ceiling division
+        summaries = []
+ 
+        for week in range(num_weeks):
+            week_data = checker.check_week(week, days)
+ 
+            # Get the state at the end of this week
+            week_end_day = min((week + 1) * 7, days)
+            week_state = engine.history.get(week_end_day, engine.current_state)
+ 
+            rsu = week_state.get_rsu_per_service()
+ 
+            summaries.append({
+                "week": week + 1,
+                "racks_replaced": week_data.get("net_racks_changed", 0),
+                "power_saved": -week_data.get("net_power_change", 0),
+                "total_power_usage": week_state.total_power_kw(),
+                "rsu_totals": {
+                    "compute": rsu.get("Compute", 0),
+                    "storage": rsu.get("Storage", 0),
+                    "ai": rsu.get("AI", 0),
+                }
+            })
+ 
+        return summaries
+ 
+    except Exception as e:
+        print("Error during schedule:", str(e))
+        raise HTTPException(status_code=422, detail=str(e))
