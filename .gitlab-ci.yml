@@ -28,7 +28,7 @@ backend_lint:
     - docker
   image: python:3.11-slim
   cache:
-    key: pip-$CI_COMMIT_REF_SLUG
+    key: pip-backend-v1
     paths:
       - .pip/
   before_script:
@@ -45,7 +45,7 @@ backend_tests:
     - docker
   image: python:3.11-slim
   cache:
-    key: pip-$CI_COMMIT_REF_SLUG
+    key: pip-backend-v1
     paths:
       - .pip/
   before_script:
