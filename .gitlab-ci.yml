@@ -4,6 +4,9 @@ stages:
   - build
   - deploy
 
+default:
+  interruptible: true
+
 # --- Lint stage: runs on ALL branches ---
 
 frontend_lint:
@@ -12,7 +15,10 @@ frontend_lint:
     - docker
   image: node:20-alpine
   cache:
-    key: npm-$CI_COMMIT_REF_SLUG
+    key:
+      files:
+        - frontend/package-lock.json
+      prefix: npm-frontend
     paths:
       - .npm/
   before_script:
@@ -20,7 +26,6 @@ frontend_lint:
     - npm ci --cache ../.npm --prefer-offline
   script:
     - npm run lint
-    - npm run build
 
 backend_lint:
   stage: lint
@@ -44,6 +49,8 @@ backend_tests:
   tags:
     - docker
   image: python:3.11-slim
+  needs:
+    - backend_lint
   cache:
     key: pip-backend-v1
     paths:
@@ -75,6 +82,9 @@ build_backend:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/backend"
       --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
+      --cache=true
+      --cache-repo "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/cache"
+      --cache-ttl 168h
       --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:${CI_COMMIT_SHA}"
       --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/backend:latest"
   rules:
@@ -99,6 +109,9 @@ build_frontend:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/frontend"
       --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
+      --cache=true
+      --cache-repo "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/cache"
+      --cache-ttl 168h
       --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:${CI_COMMIT_SHA}"
       --destination "europe-north1-docker.pkg.dev/${GCP_PROJECT}/dcp/frontend:latest"
   rules:
