@@ -3,7 +3,7 @@ import json
 import os
 from src.simulation.check_data import CheckData
 from pydantic import BaseModel
-from typing import List
+from typing import List, Literal
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from src.simulation.engine import SimulationEngine
@@ -134,33 +134,33 @@ class WeeklySummaryResponse(BaseModel):
     total_power_usage: float
     rsu_totals: RsuTotals
 
+
+
+class ScheduleRequest(PlanData):
+    optimisation_mode: Literal["normal", "green"] = "normal"
+
 @app.post("/schedule")
-async def schedule_plan(plan: PlanData, days: int = 30):
+async def schedule_plan(plan: ScheduleRequest, days: int = 30):
     try:
-        # Clean up any previous run's history
         if os.path.exists("history.jsonl"):
             os.remove("history.jsonl")
- 
+
         suite_state = plan_to_suite_state(plan, suite_index=0)
         engine = SimulationEngine(suite_state)
- 
-        # Run the full simulation - this writes history.jsonl via RackReplacer
-        engine.fast_forward(days)
- 
-        # Now read weekly summaries from the history file
+
+        green = plan.optimisation_mode == "green"
+        engine.fast_forward(days, green=green)
+
         checker = CheckData()
         num_weeks = (days + 6) // 7
         summaries = []
- 
+
         for week in range(num_weeks):
             week_data = checker.check_week(week, days)
- 
-            # Get the state at the end of this week
             week_end_day = min((week + 1) * 7, days)
             week_state = engine.history.get(week_end_day, engine.current_state)
- 
             rsu = week_state.get_rsu_per_service()
- 
+
             summaries.append({
                 "week": week + 1,
                 "racks_replaced": week_data.get("net_racks_changed", 0),
@@ -172,9 +172,9 @@ async def schedule_plan(plan: PlanData, days: int = 30):
                     "ai": rsu.get("AI", 0),
                 }
             })
- 
+
         return summaries
- 
+
     except Exception as e:
         print("Error during schedule:", str(e))
         raise HTTPException(status_code=422, detail=str(e))

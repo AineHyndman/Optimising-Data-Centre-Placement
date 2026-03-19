@@ -32,6 +32,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'layout' | 'report'>('layout');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [scheduleResults, setScheduleResults] = useState<WeeklySummaryData[] | null>(null);
+  const [greenMode, setGreenMode] = useState<boolean>(false);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -113,7 +114,7 @@ function App() {
       const response = await fetch(`${api}/schedule?days=30`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(plan)
+        body: JSON.stringify({ ...plan, optimisation_mode: greenMode ? 'green' : 'normal' })
       });
       
       if (!response.ok) throw new Error(`Simulation failed: ${response.statusText}`);
@@ -160,6 +161,17 @@ function App() {
               {plan.cluster_plans.map((suite, index) => <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>)}
             </select>
           )}
+          <div className="flex items-center gap-2 bg-[#1a1d24] border border-[#333] rounded-md px-3 py-1.5">
+            <span className={`text-[12px] font-bold ${!greenMode ? 'text-white' : 'text-[#666]'}`}>Normal</span>
+            <button
+              onClick={() => setGreenMode(prev => !prev)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${greenMode ? 'bg-[#4CAF50]' : 'bg-[#444]'}`}
+              aria-label="Toggle green mode"
+            >
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${greenMode ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+            <span className={`text-[12px] font-bold ${greenMode ? 'text-[#4CAF50]' : 'text-[#666]'}`}>Green</span>
+          </div>
           <button
             onClick={handleRunOptimization}
             disabled={isSimulating || !plan}
