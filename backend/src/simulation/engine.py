@@ -14,7 +14,6 @@ class SimulationEngine:
         self.rack_replacer = RackReplacer()
 
     def step(self, green: bool = False) -> SuiteState:
-        print(green)
 
         state = self.current_state
 
