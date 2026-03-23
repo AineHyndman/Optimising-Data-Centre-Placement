@@ -3,7 +3,7 @@ import json
 import os
 from src.simulation.check_data import CheckData
 from pydantic import BaseModel
-from typing import List, Literal
+from typing import List, Literal, Optional
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from src.simulation.engine import SimulationEngine
@@ -127,12 +127,26 @@ class RsuTotals(BaseModel):
     storage: float
     ai: float
 
+class ChangedPosition(BaseModel):
+    row: int
+    position: int
+    old_rack: Optional[str]
+    new_rack: Optional[str]
+
 class WeeklySummaryResponse(BaseModel):
     week: int
     racks_replaced: int
     power_saved: float
     total_power_usage: float
     rsu_totals: RsuTotals
+    changed_positions: List[ChangedPosition]
+
+def _get_position_map(state: SimSuiteState) -> dict:
+    """Returns {(row, position): rack.code} for a given SuiteState."""
+    return {
+        (pos.row, pos.position): rack.code
+        for pos, rack in state.positions.items()
+    }
 
 
 
@@ -154,13 +168,24 @@ async def schedule_plan(plan: ScheduleRequest, days: int = 30):
         checker = CheckData()
         num_weeks = (days + 6) // 7
         summaries = []
+        initial_state = engine.history.get(0, engine.current_state)
 
         for week in range(num_weeks):
             week_data = checker.check_week(week, days)
+            week_start_day = week * 7
             week_end_day = min((week + 1) * 7, days)
+            prev_state = engine.history.get(week_start_day, initial_state)
             week_state = engine.history.get(week_end_day, engine.current_state)
-            rsu = week_state.get_rsu_per_service()
 
+            prev_map = _get_position_map(prev_state)
+            curr_map = _get_position_map(week_state)
+            changed_positions = [
+                {"row": row, "position": pos, "old_rack": prev_map.get((row, pos)), "new_rack": new_rack}
+                for (row, pos), new_rack in curr_map.items()
+                if prev_map.get((row, pos)) != new_rack
+            ]
+
+            rsu = week_state.get_rsu_per_service()
             summaries.append({
                 "week": week + 1,
                 "racks_replaced": week_data.get("net_racks_changed", 0),
@@ -170,7 +195,8 @@ async def schedule_plan(plan: ScheduleRequest, days: int = 30):
                     "compute": rsu.get("Compute", 0),
                     "storage": rsu.get("Storage", 0),
                     "ai": rsu.get("AI", 0),
-                }
+                },
+                "changed_positions": changed_positions,
             })
 
         return summaries

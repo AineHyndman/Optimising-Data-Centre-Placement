@@ -62,10 +62,18 @@ export interface Range {
     ai: number;
   }
   
+  export interface ChangedPosition {
+    row: number;
+    position: number;
+    old_rack: string | null;
+    new_rack: string | null;
+  }
+
   export interface WeeklySummaryData {
     week: number;
     racks_replaced: number;
     power_saved: number;
     total_power_usage: number;
     rsu_totals: RsuTotals;
+    changed_positions: ChangedPosition[];
   }

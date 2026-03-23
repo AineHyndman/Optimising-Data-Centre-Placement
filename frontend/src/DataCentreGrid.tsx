@@ -8,7 +8,8 @@ interface DataCentreGridProps {
   title: string;
   viewMode?: 'type' | 'power';
   rackTypes?: RackSpec[];
-  onCellClick?: (row: number, col: number) => void; // NEW PROP
+  onCellClick?: (row: number, col: number) => void;
+  highlightedCells?: Set<string>; // "row,col" keys for changed rack positions
 }
 
 const cellColorMap: Record<string, string> = {
@@ -22,7 +23,8 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
   title,
   viewMode = 'type',
   rackTypes = [],
-  onCellClick // USE PROP
+  onCellClick,
+  highlightedCells,
 }) => {
   const maxPower = rackTypes.length > 0 ? Math.max(...rackTypes.map(r => r.power_need)) : 1;
 
@@ -86,11 +88,12 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
                 {grid[rowIndex].map((cellValue, colIndex) => {
                   const cellData = getCellData(cellValue);
 
+                  const isHighlighted = highlightedCells?.has(`${rowIndex},${colIndex}`);
                   return (
                     <td
                       key={colIndex}
-                      onClick={() => onCellClick && onCellClick(rowIndex, colIndex)} // TRIGGER MODAL
-                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all cursor-pointer hover:ring-2 hover:ring-white/50 ${cellData.classes}`}
+                      onClick={() => onCellClick && onCellClick(rowIndex, colIndex)}
+                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all cursor-pointer hover:ring-2 hover:ring-white/50 ${cellData.classes} ${isHighlighted ? 'ring-2 ring-amber-400 z-10 relative' : ''}`}
                       title={viewMode === 'power' && cellValue ? cellData.title : `Row: R${rowIndex}, Col: P${colIndex}`}
                     >
                       {cellData.content}

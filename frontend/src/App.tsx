@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import './App.css';
-import type { ClusterPlan, WeeklySummaryData } from './types';
+import type { ClusterPlan, WeeklySummaryData, ChangedPosition } from './types';
 import { parsePositionsToGrid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
 import { Sidebar } from './Sidebar';
@@ -33,6 +33,7 @@ function App() {
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [scheduleResults, setScheduleResults] = useState<WeeklySummaryData[] | null>(null);
   const [greenMode, setGreenMode] = useState<boolean>(false);
+  const [highlightedCells, setHighlightedCells] = useState<Set<string> | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,8 +41,9 @@ function App() {
     setError('');
     setSelectedSuiteIndex(0);
     setPlannedMoves([]); 
-    setScheduleResults(null); // Reset results on new file
-    setActiveTab('layout'); // Reset to grid view
+    setScheduleResults(null);
+    setHighlightedCells(null);
+    setActiveTab('layout');
     setFileName(file.name);
     
     const formData = new FormData();
@@ -103,6 +105,12 @@ function App() {
     setModalPos(null);
   };
 
+  const handleViewOnGrid = (positions: ChangedPosition[]) => {
+    const cells = new Set(positions.map(p => `${p.row},${p.position}`));
+    setHighlightedCells(cells);
+    setActiveTab('layout');
+  };
+
   // NEW FUNCTION: Call Backend Schedule Endpoint
   const handleRunOptimization = async () => {
     if (!plan) return;
@@ -154,6 +162,7 @@ function App() {
               onChange={(e) => {
                 setSelectedSuiteIndex(Number(e.target.value));
                 setPlannedMoves([]);
+                setHighlightedCells(null);
                 setActiveTab('layout');
               }}
               className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]"
@@ -190,7 +199,7 @@ function App() {
         // VIEW TOGGLE LOGIC
         activeTab === 'report' && scheduleResults ? (
           
-          <WeeklySummary data={scheduleResults} onBack={() => setActiveTab('layout')} />
+          <WeeklySummary data={scheduleResults} onBack={() => setActiveTab('layout')} onViewOnGrid={handleViewOnGrid} />
           
         ) : (
           
@@ -198,19 +207,28 @@ function App() {
             <div className="flex-1 min-w-0 flex flex-col gap-6">
               <div className="bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35]">
                 <div className="flex justify-between items-center mb-4">
-                  <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                    {highlightedCells && (
+                      <div className="flex items-center gap-2 text-xs text-amber-400 border border-amber-400/40 bg-amber-400/10 px-2 py-1 rounded">
+                        <span>{highlightedCells.size} changed racks highlighted</span>
+                        <button onClick={() => setHighlightedCells(null)} className="hover:text-white transition-colors">✕</button>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex bg-[#0f1115] rounded-md p-1 border border-[#333]">
                     <button onClick={() => setViewMode('type')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'type' ? 'bg-[#4A90E2] text-white' : 'text-[#888]'}`}>Rack View</button>
                     <button onClick={() => setViewMode('power')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'power' ? 'bg-[#F44336] text-white' : 'text-[#888]'}`}>Power Heatmap</button>
                   </div>
                 </div>
                 
-                <DataCentreGrid 
-                  grid={localGrid} 
-                  title="" 
-                  viewMode={viewMode} 
-                  rackTypes={plan.rack_types} 
+                <DataCentreGrid
+                  grid={localGrid}
+                  title=""
+                  viewMode={viewMode}
+                  rackTypes={plan.rack_types}
                   onCellClick={(row, col) => setModalPos({ row, col })}
+                  highlightedCells={highlightedCells ?? undefined}
                 />
               </div>
 

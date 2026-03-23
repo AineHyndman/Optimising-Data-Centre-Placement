@@ -1,12 +1,13 @@
 import React from 'react';
-import type { WeeklySummaryData } from './types';
+import type { WeeklySummaryData, ChangedPosition } from './types';
 
 interface WeeklySummaryProps {
   data: WeeklySummaryData[];
   onBack: () => void;
+  onViewOnGrid?: (positions: ChangedPosition[]) => void;
 }
 
-export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ data, onBack }) => {
+export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ data, onBack, onViewOnGrid }) => {
   if (!data || data.length === 0) {
     return (
       <div className="bg-[#1a1d24] p-8 rounded-lg border border-[#2a2d35] text-center">
@@ -51,9 +52,19 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ data, onBack }) =>
           <div key={week.week} className="bg-[#1a1d24] p-5 rounded-lg border border-[#2a2d35] flex flex-col">
             <div className="flex justify-between items-center mb-4 border-b border-[#333] pb-3">
               <h3 className="font-bold text-lg">Week {week.week}</h3>
-              <span className="text-xs bg-[#0f1115] px-2 py-1 rounded border border-[#333]">
-                {week.racks_replaced} swaps
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-[#0f1115] px-2 py-1 rounded border border-[#333]">
+                  {week.racks_replaced} swaps
+                </span>
+                {onViewOnGrid && week.changed_positions?.length > 0 && (
+                  <button
+                    onClick={() => onViewOnGrid(week.changed_positions)}
+                    className="text-xs px-2 py-1 rounded border border-amber-400/50 text-amber-400 hover:bg-amber-400/10 transition-colors"
+                  >
+                    View on Grid
+                  </button>
+                )}
+              </div>
             </div>
             
             <div className="space-y-4 flex-1">
