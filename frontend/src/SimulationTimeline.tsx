@@ -11,7 +11,7 @@ interface SimulationTimelineProps {
 }
 
 function computeStdDev(positions: GridPosition[], rackPowerMap: Map<string, number>): number {
-  const powers = positions.map(p => rackPowerMap.get(p.rack_type) ?? 0).filter(p => p > 0);
+  const powers = positions.map(p => (p.rack_type ? rackPowerMap.get(p.rack_type) : undefined) ?? 0).filter(p => p > 0);
   if (powers.length === 0) return 0;
   const mean = powers.reduce((a, b) => a + b, 0) / powers.length;
   const variance = powers.reduce((acc, p) => acc + (p - mean) ** 2, 0) / powers.length;
