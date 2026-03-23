@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import './App.css';
-import type { ClusterPlan, WeeklySummaryData } from './types';
+import type { ClusterPlan, WeeklySummaryData, GridPosition, ScheduleResponse } from './types';
 import { parsePositionsToGrid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
 import { Sidebar } from './Sidebar';
 import { RackSelectorModal } from './RackSelectorModal';
-import { WeeklySummary } from './WeeklySummary'; // NEW IMPORT
+import { SimulationTimeline } from './SimulationTimeline';
 
 const LOCAL_API = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -32,6 +32,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'layout' | 'report'>('layout');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [scheduleResults, setScheduleResults] = useState<WeeklySummaryData[] | null>(null);
+  const [initialSimPositions, setInitialSimPositions] = useState<GridPosition[] | null>(null);
   const [greenMode, setGreenMode] = useState<boolean>(false);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,8 +41,9 @@ function App() {
     setError('');
     setSelectedSuiteIndex(0);
     setPlannedMoves([]); 
-    setScheduleResults(null); // Reset results on new file
-    setActiveTab('layout'); // Reset to grid view
+    setScheduleResults(null);
+    setInitialSimPositions(null);
+    setActiveTab('layout');
     setFileName(file.name);
     
     const formData = new FormData();
@@ -119,12 +121,10 @@ function App() {
       
       if (!response.ok) throw new Error(`Simulation failed: ${response.statusText}`);
       
-      const data = await response.json();
-      
-      // Handle either a direct array or a wrapped object depending on backend
-      const summaries = data.weekly_summaries || data;
-      setScheduleResults(summaries); 
-      setActiveTab('report'); // Switch to the report view
+      const data: ScheduleResponse = await response.json();
+      setScheduleResults(data.weeks);
+      setInitialSimPositions(data.initial_positions);
+      setActiveTab('report');
       
     } catch (err) {
       setError('Failed to run optimization schedule. Check backend logs.');
@@ -188,9 +188,14 @@ function App() {
       {plan && currentSuite && localGrid ? (
         
         // VIEW TOGGLE LOGIC
-        activeTab === 'report' && scheduleResults ? (
-          
-          <WeeklySummary data={scheduleResults} onBack={() => setActiveTab('layout')} />
+        activeTab === 'report' && scheduleResults && initialSimPositions ? (
+
+          <SimulationTimeline
+            weeks={scheduleResults}
+            initialPositions={initialSimPositions}
+            rackTypes={plan.rack_types}
+            onBack={() => setActiveTab('layout')}
+          />
           
         ) : (
           
