@@ -153,6 +153,21 @@ def _get_position_map(state: SimSuiteState) -> dict:
 class ScheduleRequest(PlanData):
     optimisation_mode: Literal["normal", "green"] = "normal"
 
+def _state_to_positions(state: SimSuiteState) -> list:
+    """Convert a SuiteState to a list of {row, position, rack_type} dicts (0-indexed)."""
+    return [
+        {"row": pos.row, "position": pos.position, "rack_type": rack.code}
+        for pos, rack in state.positions.items()
+        if rack and rack.code
+    ]
+
+def _get_position_map(state: SimSuiteState) -> dict:
+    """Returns {(row, position): rack.code} for quick comparison between states."""
+    return {
+        (pos.row, pos.position): rack.code
+        for pos, rack in state.positions.items()
+    }
+
 @app.post("/schedule")
 async def schedule_plan(plan: ScheduleRequest, days: int = 30):
     try:
@@ -199,7 +214,10 @@ async def schedule_plan(plan: ScheduleRequest, days: int = 30):
                 "changed_positions": changed_positions,
             })
 
-        return summaries
+        return {
+            "initial_positions": _state_to_positions(initial_state),
+            "weeks": summaries,
+        }
 
     except Exception as e:
         print("Error during schedule:", str(e))

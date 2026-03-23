@@ -1,4 +1,4 @@
-import type { Position, Constraints, SuitePlan, RackSpec } from './types';
+import type { Position, GridPosition, Constraints, SuitePlan, RackSpec } from './types';
 
 const ROWS = 48;
 const COLS = 16;
@@ -16,6 +16,17 @@ export function parsePositionsToGrid(positions: Position[]): Grid {
     const colIdx = parseInt(pos.position.replace('P', ''), 10); 
     if (rowIdx >= 1 && rowIdx <= ROWS && colIdx >= 1 && colIdx <= COLS) {
       grid[rowIdx - 1][colIdx - 1] = pos.rack_type ? pos.rack_type.toUpperCase() : null; 
+    }
+  });
+  return grid;
+}
+
+// For positions returned by the simulation engine (0-indexed row 0-47, position 0-15)
+export function simPositionsToGrid(positions: GridPosition[]): Grid {
+  const grid = createEmptyGrid();
+  positions.forEach((pos) => {
+    if (pos.row >= 0 && pos.row < ROWS && pos.position >= 0 && pos.position < COLS) {
+      grid[pos.row][pos.position] = pos.rack_type ? pos.rack_type.toUpperCase() : null;
     }
   });
   return grid;

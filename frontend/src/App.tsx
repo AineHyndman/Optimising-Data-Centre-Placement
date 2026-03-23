@@ -5,7 +5,7 @@ import { parsePositionsToGrid } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
 import { Sidebar } from './Sidebar';
 import { RackSelectorModal } from './RackSelectorModal';
-import { WeeklySummary } from './WeeklySummary'; // NEW IMPORT
+import { SimulationTimeline } from './SimulationTimeline';
 
 const LOCAL_API = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -32,6 +32,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'layout' | 'report'>('layout');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [scheduleResults, setScheduleResults] = useState<WeeklySummaryData[] | null>(null);
+  const [initialSimPositions, setInitialSimPositions] = useState<GridPosition[] | null>(null);
   const [greenMode, setGreenMode] = useState<boolean>(false);
   const [highlightedCells, setHighlightedCells] = useState<Set<string> | null>(null);
 
@@ -127,12 +128,10 @@ function App() {
       
       if (!response.ok) throw new Error(`Simulation failed: ${response.statusText}`);
       
-      const data = await response.json();
-      
-      // Handle either a direct array or a wrapped object depending on backend
-      const summaries = data.weekly_summaries || data;
-      setScheduleResults(summaries); 
-      setActiveTab('report'); // Switch to the report view
+      const data: ScheduleResponse = await response.json();
+      setScheduleResults(data.weeks);
+      setInitialSimPositions(data.initial_positions);
+      setActiveTab('report');
       
     } catch (err) {
       setError('Failed to run optimization schedule. Check backend logs.');
