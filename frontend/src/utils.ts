@@ -21,12 +21,14 @@ export function parsePositionsToGrid(positions: Position[]): Grid {
   return grid;
 }
 
-// For positions returned by the simulation engine (0-indexed row 0-47, position 0-15)
+// For positions returned by the simulation engine (1-indexed, matching the uploaded JSON format)
 export function simPositionsToGrid(positions: GridPosition[]): Grid {
   const grid = createEmptyGrid();
   positions.forEach((pos) => {
-    if (pos.row >= 0 && pos.row < ROWS && pos.position >= 0 && pos.position < COLS) {
-      grid[pos.row][pos.position] = pos.rack_type ? pos.rack_type.toUpperCase() : null;
+    const rowIdx = pos.row - 1;
+    const colIdx = pos.position - 1;
+    if (rowIdx >= 0 && rowIdx < ROWS && colIdx >= 0 && colIdx < COLS) {
+      grid[rowIdx][colIdx] = pos.rack_type ? pos.rack_type.toUpperCase() : null;
     }
   });
   return grid;

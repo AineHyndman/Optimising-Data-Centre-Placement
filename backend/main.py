@@ -127,6 +127,29 @@ class RsuTotals(BaseModel):
     storage: float
     ai: float
 
+class ChangedPosition(BaseModel):
+    row: int
+    position: int
+    old_rack: Optional[str]
+    new_rack: Optional[str]
+
+class WeeklySummaryResponse(BaseModel):
+    week: int
+    racks_replaced: int
+    power_saved: float
+    total_power_usage: float
+    rsu_totals: RsuTotals
+    changed_positions: List[ChangedPosition]
+
+def _get_position_map(state: SimSuiteState) -> dict:
+    """Returns {(row, position): rack.code} for a given SuiteState."""
+    return {
+        (pos.row, pos.position): rack.code
+        for pos, rack in state.positions.items()
+    }
+
+
+
 class ScheduleRequest(PlanData):
     optimisation_mode: Literal["normal", "green"] = "normal"
 
@@ -160,7 +183,7 @@ async def schedule_plan(plan: ScheduleRequest, days: int = 30):
         checker = CheckData()
         num_weeks = (days + 6) // 7
         summaries = []
-        initial_state = engine.history.get(0, suite_state)
+        initial_state = engine.history.get(0, engine.current_state)
 
         for week in range(num_weeks):
             week_data = checker.check_week(week, days)
@@ -188,7 +211,6 @@ async def schedule_plan(plan: ScheduleRequest, days: int = 30):
                     "storage": rsu.get("Storage", 0),
                     "ai": rsu.get("AI", 0),
                 },
-                "grid_positions": _state_to_positions(week_state),
                 "changed_positions": changed_positions,
             })
 

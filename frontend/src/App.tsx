@@ -34,6 +34,7 @@ function App() {
   const [scheduleResults, setScheduleResults] = useState<WeeklySummaryData[] | null>(null);
   const [initialSimPositions, setInitialSimPositions] = useState<GridPosition[] | null>(null);
   const [greenMode, setGreenMode] = useState<boolean>(false);
+  const [highlightedCells, setHighlightedCells] = useState<Set<string> | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,7 +43,7 @@ function App() {
     setSelectedSuiteIndex(0);
     setPlannedMoves([]); 
     setScheduleResults(null);
-    setInitialSimPositions(null);
+    setHighlightedCells(null);
     setActiveTab('layout');
     setFileName(file.name);
     
@@ -144,42 +145,57 @@ function App() {
           <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
           <span className="text-[#4A90E2]">Data Centre Suite</span>
           {plan && <span className="text-[#666] text-[13px] font-normal border-l border-[#333] pl-3 ml-1">
-            <span className="text-white font-bold mr-2">{fileName}</span> ({rows}x{cols})
+            {activeTab === 'report' && scheduleResults
+              ? `${rows}x${cols} Configuration Viewer`
+              : <><span className="text-white font-bold mr-2">{fileName}</span>({rows}x{cols})</>
+            }
           </span>}
         </h2>
         <div className="flex gap-3 items-center">
-          {plan && (
-            <select
-              value={selectedSuiteIndex}
-              onChange={(e) => {
-                setSelectedSuiteIndex(Number(e.target.value));
-                setPlannedMoves([]);
-                setActiveTab('layout');
-              }}
-              className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]"
-            >
-              {plan.cluster_plans.map((suite, index) => <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>)}
-            </select>
-          )}
-          <div className="flex items-center gap-2 bg-[#1a1d24] border border-[#333] rounded-md px-3 py-1.5">
-            <span className={`text-[12px] font-bold ${!greenMode ? 'text-white' : 'text-[#666]'}`}>Normal</span>
+          {activeTab === 'report' && scheduleResults ? (
             <button
-              onClick={() => setGreenMode(prev => !prev)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${greenMode ? 'bg-[#4CAF50]' : 'bg-[#444]'}`}
-              aria-label="Toggle green mode"
+              onClick={() => setActiveTab('layout')}
+              className="py-2 px-5 rounded-md text-[13px] font-bold border border-[#333] text-white hover:bg-[#1a1d24] transition-colors"
             >
-              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${greenMode ? 'translate-x-5' : 'translate-x-0'}`} />
+              Edit Mode
             </button>
-            <span className={`text-[12px] font-bold ${greenMode ? 'text-[#4CAF50]' : 'text-[#666]'}`}>Green</span>
-          </div>
-          <button
-            onClick={handleRunOptimization}
-            disabled={isSimulating || !plan}
-            className={`py-2 px-5 rounded-md text-[13px] font-bold flex items-center gap-1.5 transition-colors
-              ${isSimulating ? 'bg-[#333] text-[#888] cursor-not-allowed' : 'bg-transparent text-[#4CAF50] border border-[#4CAF50] hover:bg-[#4CAF50]/10'}`}
-          >
-            {isSimulating ? '⏳ Running...' : <><span>&#9655;</span> Run Optimization</>}
-          </button>
+          ) : (
+            <>
+              {plan && (
+                <select
+                  value={selectedSuiteIndex}
+                  onChange={(e) => {
+                    setSelectedSuiteIndex(Number(e.target.value));
+                    setPlannedMoves([]);
+                    setHighlightedCells(null);
+                    setActiveTab('layout');
+                  }}
+                  className="py-2 px-3.5 bg-[#1a1d24] text-white border border-[#333] rounded-md text-[13px]"
+                >
+                  {plan.cluster_plans.map((suite, index) => <option key={index} value={index}>{suite.datacenter} - {suite.suite}</option>)}
+                </select>
+              )}
+              <div className="flex items-center gap-2 bg-[#1a1d24] border border-[#333] rounded-md px-3 py-1.5">
+                <span className={`text-[12px] font-bold ${!greenMode ? 'text-white' : 'text-[#666]'}`}>Normal</span>
+                <button
+                  onClick={() => setGreenMode(prev => !prev)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${greenMode ? 'bg-[#4CAF50]' : 'bg-[#444]'}`}
+                  aria-label="Toggle green mode"
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${greenMode ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+                <span className={`text-[12px] font-bold ${greenMode ? 'text-[#4CAF50]' : 'text-[#666]'}`}>Green</span>
+              </div>
+              <button
+                onClick={handleRunOptimization}
+                disabled={isSimulating || !plan}
+                className={`py-2 px-5 rounded-md text-[13px] font-bold flex items-center gap-1.5 transition-colors
+                  ${isSimulating ? 'bg-[#333] text-[#888] cursor-not-allowed' : 'bg-transparent text-[#4CAF50] border border-[#4CAF50] hover:bg-[#4CAF50]/10'}`}
+              >
+                {isSimulating ? 'Running...' : '> Run Optimization'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -188,14 +204,9 @@ function App() {
       {plan && currentSuite && localGrid ? (
         
         // VIEW TOGGLE LOGIC
-        activeTab === 'report' && scheduleResults && initialSimPositions ? (
-
-          <SimulationTimeline
-            weeks={scheduleResults}
-            initialPositions={initialSimPositions}
-            rackTypes={plan.rack_types}
-            onBack={() => setActiveTab('layout')}
-          />
+        activeTab === 'report' && scheduleResults ? (
+          
+          <SimulationTimeline weeks={scheduleResults} initialPositions={initialSimPositions ?? []} rackTypes={plan.rack_types} onBack={() => setActiveTab('layout')} />
           
         ) : (
           
@@ -203,19 +214,28 @@ function App() {
             <div className="flex-1 min-w-0 flex flex-col gap-6">
               <div className="bg-[#1a1d24] p-6 rounded-lg border border-[#2a2d35]">
                 <div className="flex justify-between items-center mb-4">
-                  <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-[15px] font-bold text-[#ccc]">Suite Layout</div>
+                    {highlightedCells && (
+                      <div className="flex items-center gap-2 text-xs text-amber-400 border border-amber-400/40 bg-amber-400/10 px-2 py-1 rounded">
+                        <span>{highlightedCells.size} changed racks highlighted</span>
+                        <button onClick={() => setHighlightedCells(null)} className="hover:text-white transition-colors">✕</button>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex bg-[#0f1115] rounded-md p-1 border border-[#333]">
                     <button onClick={() => setViewMode('type')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'type' ? 'bg-[#4A90E2] text-white' : 'text-[#888]'}`}>Rack View</button>
                     <button onClick={() => setViewMode('power')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'power' ? 'bg-[#F44336] text-white' : 'text-[#888]'}`}>Power Heatmap</button>
                   </div>
                 </div>
                 
-                <DataCentreGrid 
-                  grid={localGrid} 
-                  title="" 
-                  viewMode={viewMode} 
-                  rackTypes={plan.rack_types} 
+                <DataCentreGrid
+                  grid={localGrid}
+                  title=""
+                  viewMode={viewMode}
+                  rackTypes={plan.rack_types}
                   onCellClick={(row, col) => setModalPos({ row, col })}
+                  highlightedCells={highlightedCells ?? undefined}
                 />
               </div>
 
