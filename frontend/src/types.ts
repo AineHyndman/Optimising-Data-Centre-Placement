@@ -62,10 +62,30 @@ export interface Range {
     ai: number;
   }
   
+  export interface GridPosition {
+    row: number;
+    position: number;
+    rack_type: string;
+  }
+
+  export interface ChangedPosition {
+    row: number;
+    position: number;
+    old_rack: string | null;
+    new_rack: string | null;
+  }
+
   export interface WeeklySummaryData {
     week: number;
     racks_replaced: number;
     power_saved: number;
     total_power_usage: number;
     rsu_totals: RsuTotals;
+    grid_positions: GridPosition[];
+    changed_positions: ChangedPosition[];
+  }
+
+  export interface ScheduleResponse {
+    initial_positions: GridPosition[];
+    weeks: WeeklySummaryData[];
   }
