@@ -93,7 +93,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
                     <td
                       key={colIndex}
                       onClick={() => onCellClick && onCellClick(rowIndex, colIndex)}
-                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all cursor-pointer hover:ring-2 hover:ring-white/50 ${cellData.classes} ${isHighlighted ? 'ring-2 ring-amber-400 z-10 relative' : ''}`}
+                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all cursor-pointer hover:ring-2 hover:ring-white/50 ${cellData.classes} ${isHighlighted ? 'ring-2 ring-[#50E3C2] z-10 relative' : ''}`}
                       title={viewMode === 'power' && cellValue ? cellData.title : `Row: R${rowIndex}, Col: P${colIndex}`}
                     >
                       {cellData.content}
