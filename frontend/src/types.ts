@@ -69,6 +69,12 @@ export interface Range {
     new_rack: string | null;
   }
 
+  export interface GridPosition {
+    rack_type: string | null;
+    row: number;
+    position: number;
+  }
+
   export interface WeeklySummaryData {
     week: number;
     racks_replaced: number;
@@ -76,4 +82,10 @@ export interface Range {
     total_power_usage: number;
     rsu_totals: RsuTotals;
     changed_positions: ChangedPosition[];
+    grid_positions: GridPosition[];
+  }
+
+  export interface ScheduleResponse {
+    weeks: WeeklySummaryData[];
+    initial_positions: GridPosition[];
   }
