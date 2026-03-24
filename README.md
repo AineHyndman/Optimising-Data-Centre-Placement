@@ -7,16 +7,17 @@
 
 ## Local development (without Docker)
 
-Backend:
+Backend (from `backend/`):
 - `python -m venv .venv`
-- activate the virtualenv
+- `source .venv/bin/activate` (macOS/Linux) or `.venv\Scripts\activate` (Windows)
 - `pip install -r requirements.txt`
 - `uvicorn main:app --reload --host 0.0.0.0 --port 8000`
 
-Frontend:
+Frontend (from `frontend/`):
 - `npm install`
 - `npm run dev`
-- Open http://localhost:5173
+
+Open http://localhost:5173 (frontend) and http://localhost:8000 (backend API).
 
 ---
 
