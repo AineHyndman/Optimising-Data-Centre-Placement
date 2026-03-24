@@ -32,38 +32,44 @@ class SuiteState:
     emergencyState: EmergencyState = EmergencyState() 
     
     # get the count of the rack generations 
-    def get_generation_counts(self): # tested 
+    def get_generation_counts(self):
         return Counter(r.generation for r in self.positions.values() if r.generation != 0) 
     
     # get the count of the rack types 
-    def get_type_counts(self): # tested 
+    def get_type_counts(self):
         return Counter(r.type for r in self.positions.values()) 
     
     # get the sum of the empty rack positions 
-    def get_empty_positions(self): # tested 
+    def get_empty_positions(self):
         return sum(1 for r in self.positions.values() if r.generation is None) 
     
     """ Below uses int for key instead of the string, like it is int rows.json, might change later if needed """ 
     
     # get the positions of a the rows 
-    def get_row_distribution(self): # tested 
+    def get_row_distribution(self):
         return Counter(pos.row for pos in self.positions if self.positions[pos].generation is not None) 
     
     # counts all 2023 racks 
-    def get_2023_count(self): # tested 
+    def get_2023_count(self):
         return sum(1 for r in self.positions.values() if r.generation == 2023) 
     
     # gets the rsu per service 
-    def get_rsu_per_service(self): # tested 
+    def get_rsu_per_service(self):
         temp = {} 
         
         for r in self.positions.values(): temp[r.type] = round(temp.get(r.type, 0) + r.capacity, 2) 
         return dict(temp) 
     
-    """ New Functions, migrating from Suite class """ 
+    # returns a the list of positions, with rows ordered from smallest to greatest in power
+    def get_ordered_rows(self) -> list[Position]:
+        row_power = {}
+        for pos, rack in self.positions.items():
+            if rack is not None:
+                row_power[pos.row] = row_power.get(pos.row, 0) + rack.powerNeed
+        return sorted(self.positions.keys(), key=lambda pos: row_power.get(pos.row, 0))
     
-    # gets the sum of the total power in kilowatts 
-    def total_power_kw(self) -> int: # tested 
+    # gets the sum of the total power in kilowatts
+    def total_power_kw(self) -> int:
         return sum(r.powerNeed for r in self.positions.values())
     
 
