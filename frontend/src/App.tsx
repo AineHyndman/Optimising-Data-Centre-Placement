@@ -145,10 +145,13 @@ function App() {
     setIsSimulating(true); setError('');
     try {
       const api = await getApiBase();
+      const planToSend = modifiedSuite
+        ? { ...plan, cluster_plans: plan.cluster_plans.map((s, i) => i === selectedSuiteIndex ? modifiedSuite : s) }
+        : plan;
       const res = await fetch(`${api}/schedule?days=30`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...plan, optimisation_mode: greenMode ? 'green' : 'normal' }),
+        body: JSON.stringify({ ...planToSend, optimisation_mode: greenMode ? 'green' : 'normal' }),
       });
       if (!res.ok) throw new Error(res.statusText);
       const data: ScheduleResponse = await res.json();

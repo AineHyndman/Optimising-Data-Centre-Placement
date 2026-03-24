@@ -45,6 +45,11 @@
   @apply scale-105 z-10;
 }
 
+.rack-empty:hover {
+  background-color: hsl(222 15% 18% / 0.80);
+  border-color: hsl(215 15% 35% / 0.60);
+}
+
 .rack-compute {
   background-color: hsl(210 100% 56% / 0.15);
   color:            hsl(210 100% 56%);
@@ -70,7 +75,7 @@
   background-color: hsl(222 15% 12% / 0.60);
   color:            hsl(215 15% 55% / 0.35);
   border:      1px solid hsl(222 15% 20% / 0.40);
-  cursor: default;
+  cursor: pointer;
 }
 
 /* Changed-cell highlight — solid accent ring, no distracting flicker */
