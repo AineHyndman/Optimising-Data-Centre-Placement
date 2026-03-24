@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Grid } from './utils';
 import type { RackSpec } from './types';
-import { powerToColor } from './utils';
 
 interface DataCentreGridProps {
   grid: Grid;
@@ -9,13 +8,14 @@ interface DataCentreGridProps {
   viewMode?: 'type' | 'power';
   rackTypes?: RackSpec[];
   onCellClick?: (row: number, col: number) => void;
-  highlightedCells?: Set<string>; // "row,col" keys for changed rack positions
+  highlightedCells?: Set<string>;
 }
 
-const cellColorMap: Record<string, string> = {
-  C: 'bg-[#4A90E2]',
-  S: 'bg-[#50E3C2]',
-  A: 'bg-[#BD10E0]',
+const POWER_COLOR = (intensity: number): string => {
+  if (intensity <= 0.33) return 'hsl(160 84% 45%)';
+  if (intensity <= 0.66) return 'hsl(38 95% 55%)';
+  if (intensity <= 0.85) return 'hsl(22 95% 55%)';
+  return 'hsl(0 72% 55%)';
 };
 
 export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
@@ -28,26 +28,46 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
 }) => {
   const maxPower = rackTypes.length > 0 ? Math.max(...rackTypes.map(r => r.power_need)) : 1;
 
-  const getCellData = (value: string | null) => {
-    if (!value) return { classes: 'bg-transparent border border-[#2a2d35]', title: 'Empty', content: '' };
+  const getCellProps = (value: string | null): {
+    className: string;
+    style?: React.CSSProperties;
+    label: string;
+  } => {
+    const label = value ? value.toUpperCase() : '·';
+
+    if (!value) {
+      return { className: 'rack-cell rack-empty w-10 h-8', label };
+    }
 
     const typeKey = value.charAt(0).toUpperCase();
-    const rackSpec = rackTypes.find(r => r.type.charAt(0).toUpperCase() === typeKey);
-    const power = rackSpec ? rackSpec.power_need : 0;
 
     if (viewMode === 'power') {
-      const intensity = power / maxPower;
+      const spec =
+        rackTypes.find(r => r.name === value) ??
+        rackTypes.find(r => r.type.charAt(0).toUpperCase() === typeKey);
+      const intensity = (spec?.power_need ?? 0) / maxPower;
+      const color = POWER_COLOR(intensity);
       return {
-        classes: `${powerToColor(intensity)} border border-white/10`,
-        title: `${power} kW`,
-        content: value
+        className: 'rack-cell w-10 h-8',
+        style: {
+          backgroundColor: color.replace(')', ' / 0.15)').replace('hsl(', 'hsl('),
+          color,
+          border: `1px solid ${color.replace(')', ' / 0.40)').replace('hsl(', 'hsl(')}`,
+          boxShadow: `0 0 10px ${color.replace(')', ' / 0.28)').replace('hsl(', 'hsl(')}`,
+        },
+        label,
       };
     }
 
+    const classMap: Record<string, string> = {
+      C: 'rack-compute',
+      S: 'rack-storage',
+      A: 'rack-ai',
+    };
+
     return {
-      classes: `${cellColorMap[typeKey] || 'bg-[#ccc]'} border border-white/10 text-white`,
-      title: '',
-      content: value
+      className: `rack-cell w-10 h-8 ${classMap[typeKey] ?? 'rack-empty'}`,
+      label,
     };
   };
 
@@ -56,55 +76,55 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
   const isEmptyRow = (rowIndex: number) => grid[rowIndex].every(cell => cell === null);
 
   return (
-    <div className="overflow-x-auto">
-      {title && <h3 className="mb-4 text-lg font-bold">{title}</h3>}
-      <table className="border-separate border-spacing-[2px] w-full">
-        <thead>
-          <tr>
-            <th className="w-10"></th>
-            {Array.from({ length: cols }).map((_, colIndex) => (
-              <th key={colIndex} className="text-[10px] text-[#666] font-normal py-1 text-center font-mono uppercase tracking-tighter">
-                P{colIndex}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: rows }).map((_, rowIndex) => {
-            if (isEmptyRow(rowIndex)) {
-              return (
-                <tr key={rowIndex}>
-                  <td className="text-[10px] text-[#444] font-mono pr-2 text-right">R{rowIndex.toString().padStart(2, '0')}</td>
-                  <td colSpan={cols} className="h-2" onClick={() => onCellClick && onCellClick(rowIndex, 0)}></td>
-                </tr>
-              );
-            }
+    <div className="overflow-auto">
+      {title && <h3 className="mb-4 text-lg font-semibold font-mono">{title}</h3>}
 
-            return (
-              <tr key={rowIndex}>
-                <td className="text-[10px] text-[#555] font-mono pr-2 text-right whitespace-nowrap">
-                  R{rowIndex.toString().padStart(2, '0')}
-                </td>
-                {grid[rowIndex].map((cellValue, colIndex) => {
-                  const cellData = getCellData(cellValue);
+      {/* Column headers — offset by row-label width (w-9=36px) + gap-1 (4px) = 40px = ml-10 */}
+      <div className="flex gap-1 mb-1 ml-10">
+        {Array.from({ length: cols }, (_, c) => (
+          <div key={c} className="w-10 text-center text-[9px] text-muted-foreground font-mono shrink-0">
+            P{c}
+          </div>
+        ))}
+      </div>
 
-                  const isHighlighted = highlightedCells?.has(`${rowIndex},${colIndex}`);
-                  return (
-                    <td
-                      key={colIndex}
-                      onClick={() => onCellClick && onCellClick(rowIndex, colIndex)}
-                      className={`text-center text-[9px] font-bold py-1 px-0 rounded-sm transition-all cursor-pointer hover:ring-2 hover:ring-white/50 ${cellData.classes} ${isHighlighted ? 'ring-2 ring-[#50E3C2] z-10 relative' : ''}`}
-                      title={viewMode === 'power' && cellValue ? cellData.title : `Row: R${rowIndex}, Col: P${colIndex}`}
-                    >
-                      {cellData.content}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {/* Rows */}
+      <div className="flex flex-col gap-1">
+        {Array.from({ length: rows }, (_, rowIndex) => {
+          if (isEmptyRow(rowIndex)) {
+            return <div key={rowIndex} className="h-2" />;
+          }
+
+          return (
+            <div key={rowIndex} className="flex items-center gap-1">
+              {/* Row label */}
+              <div className="w-9 text-right pr-1 text-[9px] text-muted-foreground font-mono shrink-0 select-none">
+                R{rowIndex.toString().padStart(2, '0')}
+              </div>
+
+              {/* Cells */}
+              {grid[rowIndex].map((cellValue, colIndex) => {
+                const isChanged = highlightedCells?.has(`${rowIndex},${colIndex}`);
+                const { className, style, label } = getCellProps(cellValue);
+
+                return (
+                  <button
+                    key={colIndex}
+                    className={`${className} ${isChanged ? 'rack-changed' : ''}`}
+                    style={style}
+                    onClick={() => onCellClick?.(rowIndex, colIndex)}
+                    title={cellValue
+                      ? `${cellValue} — R${rowIndex.toString().padStart(2, '0')} P${colIndex}`
+                      : `Empty — R${rowIndex.toString().padStart(2, '0')} P${colIndex}`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

@@ -212,6 +212,7 @@ async def schedule_plan(plan: ScheduleRequest, days: int = 30):
                     "ai": rsu.get("AI", 0),
                 },
                 "changed_positions": changed_positions,
+                "grid_positions": _state_to_positions(week_state),
             })
 
         return {
