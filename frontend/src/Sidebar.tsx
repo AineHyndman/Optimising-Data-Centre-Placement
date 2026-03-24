@@ -68,6 +68,51 @@ const TYPE_CONFIG = {
   ai:      { label: 'AI',      color: 'hsl(38 95% 55%)',   barFrom: '#b36a00', barTo: '#f5c04a', Icon: IconBrain },
 };
 
+const CapacityCard = ({
+  type, value, range, maxScale,
+}: {
+  type: keyof typeof TYPE_CONFIG;
+  value: number;
+  range: { min: number; max: number };
+  maxScale: number;
+}) => {
+  const { label, color, barFrom, barTo, Icon } = TYPE_CONFIG[type];
+  const isViolated = value < range.min || value > range.max;
+  const barPct = Math.min((value / maxScale) * 100, 100);
+  const minPct = (range.min / maxScale) * 100;
+  const maxPct = (range.max / maxScale) * 100;
+
+  return (
+    <div className="mb-3 p-4 bg-[#15171c] rounded-xl border border-[#1e2028]">
+      <div className="flex justify-between items-center mb-2">
+        <span className="font-semibold text-[12px] flex items-center gap-2" style={{ color: isViolated ? 'hsl(0 72% 55%)' : color }}>
+          <Icon size={15} />
+          {label}
+        </span>
+        <span className={`text-[10px] py-0.5 px-2.5 rounded-full font-bold border ${
+          isViolated
+            ? 'text-red-400 border-red-500/50 bg-red-500/10'
+            : 'text-green-400 border-green-600/50 bg-green-500/10'
+        }`}>
+          {isViolated ? 'VIOLATION' : 'OK'}
+        </span>
+      </div>
+      <div className="text-[20px] font-bold text-white leading-none mb-3">
+        {value.toFixed(1)}{' '}
+        <span className="text-[11px] text-[#555] font-normal">/ {range.min}–{range.max} RSU</span>
+      </div>
+      <div className="h-2 bg-[#1e2028] rounded-full relative overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${barPct}%`, background: `linear-gradient(to right, ${barFrom}, ${barTo})` }}
+        />
+        <div className="absolute inset-y-0 w-px bg-white/25" style={{ left: `${minPct}%` }} />
+        <div className="absolute inset-y-0 w-px bg-white/25" style={{ left: `${maxPct}%` }} />
+      </div>
+    </div>
+  );
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode = 'type', rackTypes = [] }) => {
   const stats = useMemo(() => {
     const counts = { compute: 0, storage: 0, ai: 0 };
@@ -100,51 +145,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode =
   }, [suite, rackTypes]);
 
   const maxRowPower = Math.max(...powerByRow.map(([, p]) => p), 1);
-
-  const CapacityCard = ({
-    type, value, range, maxScale,
-  }: {
-    type: keyof typeof TYPE_CONFIG;
-    value: number;
-    range: { min: number; max: number };
-    maxScale: number;
-  }) => {
-    const { label, color, barFrom, barTo, Icon } = TYPE_CONFIG[type];
-    const isViolated = value < range.min || value > range.max;
-    const barPct = Math.min((value / maxScale) * 100, 100);
-    const minPct = (range.min / maxScale) * 100;
-    const maxPct = (range.max / maxScale) * 100;
-
-    return (
-      <div className="mb-3 p-4 bg-[#15171c] rounded-xl border border-[#1e2028]">
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-semibold text-[12px] flex items-center gap-2" style={{ color: isViolated ? 'hsl(0 72% 55%)' : color }}>
-            <Icon size={15} />
-            {label}
-          </span>
-          <span className={`text-[10px] py-0.5 px-2.5 rounded-full font-bold border ${
-            isViolated
-              ? 'text-red-400 border-red-500/50 bg-red-500/10'
-              : 'text-green-400 border-green-600/50 bg-green-500/10'
-          }`}>
-            {isViolated ? 'VIOLATION' : 'OK'}
-          </span>
-        </div>
-        <div className="text-[20px] font-bold text-white leading-none mb-3">
-          {value.toFixed(1)}{' '}
-          <span className="text-[11px] text-[#555] font-normal">/ {range.min}–{range.max} RSU</span>
-        </div>
-        <div className="h-2 bg-[#1e2028] rounded-full relative overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${barPct}%`, background: `linear-gradient(to right, ${barFrom}, ${barTo})` }}
-          />
-          <div className="absolute inset-y-0 w-px bg-white/25" style={{ left: `${minPct}%` }} />
-          <div className="absolute inset-y-0 w-px bg-white/25" style={{ left: `${maxPct}%` }} />
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="w-96 shrink-0 flex flex-col gap-3">
