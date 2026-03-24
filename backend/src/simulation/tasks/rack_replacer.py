@@ -243,14 +243,16 @@ class RackReplacer:
     def replace_multiple(self, state: SuiteState, constraint: Constraints, green: bool = False) -> SuiteState:
         """
         Added a second version of the loop, one for regular and one for emergency power handling
+
+        NEW: Now uses ordered rows
         """
         if state.emergencyState.available_days() > 1 and not state.emergencyState.cooldown:
-            for pos in state.positions.keys():
+            for pos in state.get_ordered_rows():
                 if self.racks_changed >= self.max_moves_per_day:
                     break
                 state = self.replace_rack(state, pos, constraint, green)
         else:
-            for pos in state.positions.keys():
+            for pos in state.get_ordered_rows():
                 if self.racks_changed >= self.max_moves_per_day:
                     break
                 state = self.emergency_replace_rack(state, pos, constraint)
@@ -266,7 +268,6 @@ class RackReplacer:
 Test below creates new suitestate, emergencystate and rackreplacer
 Then it simulates a cycle/day
 """
-
 """
 def myTest():
     x = 0
