@@ -306,7 +306,7 @@ function App() {
             >
               <IcoPencil /> Edit Mode
             </button>
-          ) : (
+          ) : plan ? (
             <>
               {/* Normal / Green toggle */}
               <div className="flex items-center gap-2 border border-[#2a2d35] rounded-md px-3 py-1.5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
@@ -324,16 +324,16 @@ function App() {
               {/* Run Optimization */}
               <button
                 onClick={handleRunOptimization}
-                disabled={isSimulating || !plan}
+                disabled={isSimulating}
                 className={`py-2 px-4 rounded-md text-[13px] font-semibold flex items-center gap-2 transition-colors border
-                  ${isSimulating || !plan
+                  ${isSimulating
                     ? 'border-[#2a2d35] text-[#555] cursor-not-allowed'
                     : 'border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10'}`}
               >
                 {isSimulating ? <><IcoSpinner /> Running…</> : <><IcoLightning /> Run Optimization</>}
               </button>
             </>
-          )}
+          ) : null}
         </div>
       </div>
 
