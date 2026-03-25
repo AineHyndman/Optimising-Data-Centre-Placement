@@ -7,6 +7,7 @@ interface SidebarProps {
   constraints: Constraints;
   viewMode?: 'type' | 'power';
   rackTypes: RackSpec[];
+  className?: string;
 }
 
 // ── Inline SVG icons ────────────────────────────────────────────────────────
@@ -113,7 +114,7 @@ const CapacityCard = ({
   );
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode = 'type', rackTypes = [] }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode = 'type', rackTypes = [], className }) => {
   const stats = useMemo(() => {
     const counts = { compute: 0, storage: 0, ai: 0 };
     suite.positions.forEach(pos => {
@@ -147,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode =
   const maxRowPower = Math.max(...powerByRow.map(([, p]) => p), 1);
 
   return (
-    <div className="w-96 shrink-0 flex flex-col gap-3">
+    <div className={className ?? "w-96 shrink-0 flex flex-col gap-3"}>
 
       {/* Status */}
       <div className={`border py-4 px-5 rounded-xl ${
