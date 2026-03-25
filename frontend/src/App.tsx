@@ -230,17 +230,6 @@ function App() {
   const initialStd         = useMemo(() => computeStdDev(initialSimPositions ?? [], rackPowerMap), [initialSimPositions, rackPowerMap]);
   const currentStd         = useMemo(() => computeStdDev(currentSimPositions, rackPowerMap), [currentSimPositions, rackPowerMap]);
   const variancePct        = initialStd > 0 ? ((initialStd - currentStd) / initialStd) * 100 : 0;
-  const simPowerByRow = useMemo(() => {
-    const rowMap = new Map<number, number>();
-    currentSimPositions.forEach(pos => {
-      if (!pos.rack_type) return;
-      const power = rackPowerMap.get(pos.rack_type) ?? rackPowerMap.get(pos.rack_type.toUpperCase()) ?? 0;
-      rowMap.set(pos.row, (rowMap.get(pos.row) ?? 0) + power);
-    });
-    return Array.from(rowMap.entries()).filter(([, p]) => p > 0).sort(([a], [b]) => a - b);
-  }, [currentSimPositions, rackPowerMap]);
-  const simMaxRowPower = Math.max(...simPowerByRow.map(([, p]) => p), 1);
-  const simTotalPower  = simPowerByRow.reduce((a, [, p]) => a + p, 0);
 
   const currentWeekData    = isSimMode && simWeek > 0 ? scheduleResults![simWeek - 1] : null;
   const changedPositions: ChangedPosition[] = currentWeekData?.changed_positions ?? [];
@@ -444,6 +433,7 @@ const handleDownloadResults = () => {
 
             {/* Planned modifications (edit mode only) */}
             {!isSimMode && plannedMoves.length > 0 && (
+
               <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-semibold text-[14px]">Planned Modifications ({plannedMoves.length})</span>
@@ -469,12 +459,24 @@ const handleDownloadResults = () => {
                 </div>
               </div>
             )}
+
           </div>
 
-          {/* ── Right: Sidebar ── */}
-          {isSimMode ? (
-            /* Simulation stats sidebar */
-            <div className="w-80 shrink-0 flex flex-col gap-3">
+          {/* ── Right: sidebar ── */}
+          <div className="w-80 shrink-0 flex flex-col gap-3">
+
+            {isSimMode && (
+              <>
+              {/* Download button */}
+              <button
+                onClick={handleDownloadResults}
+                className="py-2.5 px-4 rounded-md text-[13px] font-semibold border border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Optimized JSON
+              </button>
 
               {/* Timeline card */}
               <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
@@ -666,59 +668,23 @@ const handleDownloadResults = () => {
                 )}
               </div>
 
-              {/* Power by Row */}
-              {simPowerByRow.length > 0 && (
-                <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
-                  <div className="text-[10px] text-[#444] uppercase font-bold tracking-widest mb-4">
-                    Power by Row (kW)
-                  </div>
-                  <div className="space-y-1.25 max-h-64 overflow-y-auto pr-1">
-                    {simPowerByRow.map(([row, power]) => (
-                      <div key={row} className="flex items-center gap-3">
-                        <span className="text-[11px] text-[#444] font-mono w-8 shrink-0 text-right">
-                          R{row.toString().padStart(2, '0')}
-                        </span>
-                        <div className="flex-1 h-6 bg-[#1e2028] rounded overflow-hidden">
-                          <div
-                            className="h-full rounded transition-all duration-300"
-                            style={{
-                              width: `${(power / simMaxRowPower) * 100}%`,
-                              background: 'linear-gradient(to right, #1D4ED8, #60A5FA)',
-                            }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-[#666] font-mono w-9 text-right shrink-0">{power}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-4 pt-3 border-t border-[#1e2028] text-[11px] text-[#444]">
-                    <span>Total: {simTotalPower.toLocaleString()} kW</span>
-                    <span>Max row: {simMaxRowPower} kW</span>
-                  </div>
-                </div>
-              )}
+            </>
+            )}
 
-              <button
-                onClick={handleDownloadResults}
-                className="py-2.5 px-4 rounded-md text-[13px] font-semibold border border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Download Results JSON
-              </button>
+            {/* Always-visible metrics sidebar */}
+            <Sidebar suite={modifiedSuite ?? currentSuite!} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} className="flex flex-col gap-3" />
 
+            {isSimMode && (
+              <>
               <button
                 onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
                 className="text-[12px] text-[#444] hover:text-white text-center py-2 transition-colors"
               >
                 ← Back to Edit Mode
               </button>
-            </div>
-          ) : (
-            /* Normal edit sidebar */
-            <Sidebar suite={modifiedSuite!} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} />
-          )}
+              </>
+            )}
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center mt-16 max-w-[700px] mx-auto text-center">
