@@ -269,17 +269,29 @@ function App() {
   const cols = displayGrid?.[0]?.length || 0;
 
 const handleDownloadResults = () => {
-  if (!plan) return;
+  if (!plan || !scheduleResults) return;
 
-  // Build the plan with any manual edits applied
-  const planToExport: ClusterPlan = modifiedSuite
-    ? {
-        ...plan,
-        cluster_plans: plan.cluster_plans.map((s, i) =>
-          i === selectedSuiteIndex ? modifiedSuite : s
-        ),
-      }
-    : plan;
+  // Use the final optimized grid positions from the last simulation week
+  const finalPositions = scheduleResults[scheduleResults.length - 1].grid_positions;
+  const optimizedPositions = finalPositions
+    .filter(p => p.rack_type !== null)
+    .map(p => ({
+      rack_type: p.rack_type as string,
+      row: String(p.row),
+      position: String(p.position),
+    }));
+
+  const optimizedSuite = {
+    ...(modifiedSuite ?? currentSuite ?? plan.cluster_plans[selectedSuiteIndex]),
+    positions: optimizedPositions,
+  };
+
+  const planToExport: ClusterPlan = {
+    ...plan,
+    cluster_plans: plan.cluster_plans.map((s, i) =>
+      i === selectedSuiteIndex ? optimizedSuite : s
+    ),
+  };
 
   const blob = new Blob([JSON.stringify(planToExport, null, 2)], {
     type: 'application/json',
@@ -287,7 +299,7 @@ const handleDownloadResults = () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `cluster-plan_${fileName.replace('.json', '')}_export.json`;
+  a.download = `cluster-plan_${fileName.replace('.json', '')}_optimized.json`;
   a.click();
   URL.revokeObjectURL(url);
 };
