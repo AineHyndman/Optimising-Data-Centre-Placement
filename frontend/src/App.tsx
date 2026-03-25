@@ -230,17 +230,6 @@ function App() {
   const initialStd         = useMemo(() => computeStdDev(initialSimPositions ?? [], rackPowerMap), [initialSimPositions, rackPowerMap]);
   const currentStd         = useMemo(() => computeStdDev(currentSimPositions, rackPowerMap), [currentSimPositions, rackPowerMap]);
   const variancePct        = initialStd > 0 ? ((initialStd - currentStd) / initialStd) * 100 : 0;
-  const simPowerByRow = useMemo(() => {
-    const rowMap = new Map<number, number>();
-    currentSimPositions.forEach(pos => {
-      if (!pos.rack_type) return;
-      const power = rackPowerMap.get(pos.rack_type) ?? rackPowerMap.get(pos.rack_type.toUpperCase()) ?? 0;
-      rowMap.set(pos.row, (rowMap.get(pos.row) ?? 0) + power);
-    });
-    return Array.from(rowMap.entries()).filter(([, p]) => p > 0).sort(([a], [b]) => a - b);
-  }, [currentSimPositions, rackPowerMap]);
-  const simMaxRowPower = Math.max(...simPowerByRow.map(([, p]) => p), 1);
-  const simTotalPower  = simPowerByRow.reduce((a, [, p]) => a + p, 0);
 
   const currentWeekData    = isSimMode && simWeek > 0 ? scheduleResults![simWeek - 1] : null;
   const changedPositions: ChangedPosition[] = currentWeekData?.changed_positions ?? [];
