@@ -152,6 +152,8 @@ def _get_position_map(state: SimSuiteState) -> dict:
 
 class ScheduleRequest(PlanData):
     optimisation_mode: Literal["normal", "green"] = "normal"
+    weeks: int = 4
+    max_moves_per_day: int = 32
 
 def _state_to_positions(state: SimSuiteState) -> list:
     """Convert a SuiteState to a list of {row, position, rack_type} dicts (0-indexed)."""
@@ -169,19 +171,21 @@ def _get_position_map(state: SimSuiteState) -> dict:
     }
 
 @app.post("/schedule")
-async def schedule_plan(plan: ScheduleRequest, days: int = 30):
+async def schedule_plan(plan: ScheduleRequest):
     try:
         if os.path.exists("history.jsonl"):
             os.remove("history.jsonl")
 
+        days = plan.weeks * 7
         suite_state = plan_to_suite_state(plan, suite_index=0)
         engine = SimulationEngine(suite_state)
+        engine.rack_replacer.max_moves_per_day = plan.max_moves_per_day
 
         green = plan.optimisation_mode == "green"
         engine.fast_forward(days, green=green)
 
         checker = CheckData()
-        num_weeks = (days + 6) // 7
+        num_weeks = plan.weeks
         summaries = []
         initial_state = engine.history.get(0, engine.current_state)
 
