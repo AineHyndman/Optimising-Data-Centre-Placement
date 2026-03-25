@@ -268,6 +268,30 @@ function App() {
   const rows = displayGrid?.length || 0;
   const cols = displayGrid?.[0]?.length || 0;
 
+const handleDownloadResults = () => {
+  if (!plan) return;
+
+  // Build the plan with any manual edits applied
+  const planToExport: ClusterPlan = modifiedSuite
+    ? {
+        ...plan,
+        cluster_plans: plan.cluster_plans.map((s, i) =>
+          i === selectedSuiteIndex ? modifiedSuite : s
+        ),
+      }
+    : plan;
+
+  const blob = new Blob([JSON.stringify(planToExport, null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cluster-plan_${fileName.replace('.json', '')}_export.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="px-6 py-4 min-h-screen text-white font-sans" style={{ backgroundColor: 'hsl(222 20% 8%)' }}>
@@ -661,6 +685,16 @@ function App() {
                   </div>
                 </div>
               )}
+
+              <button
+                onClick={handleDownloadResults}
+                className="py-2.5 px-4 rounded-md text-[13px] font-semibold border border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Results JSON
+              </button>
 
               <button
                 onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
