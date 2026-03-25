@@ -1,10 +1,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import './App.css';
 import type { ClusterPlan, WeeklySummaryData, GridPosition, ScheduleResponse, ChangedPosition } from './types';
-import { parsePositionsToGrid, simPositionsToGrid } from './utils';
+import { parsePositionsToGrid, simPositionsToGrid, computeStdDev } from './utils';
 import { DataCentreGrid } from './DataCentreGrid';
 import { Sidebar } from './Sidebar';
 import { RackSelectorModal } from './RackSelectorModal';
+import { OptimizationModal } from './OptimizationModal';
+import { PlannedModifications } from './PlannedModifications';
+import { SimPanel } from './SimPanel';
+import { IcoLightning, IcoSpinner, IcoPencil } from './icons';
 
 const LOCAL_API  = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -16,71 +20,6 @@ async function getApiBase(): Promise<string> {
   } catch { /* localhost not available */ }
   return REMOTE_API;
 }
-
-function computeStdDev(positions: GridPosition[], powerMap: Map<string, number>): number {
-  const powers = positions
-    .map(p => (p.rack_type ? (powerMap.get(p.rack_type) ?? powerMap.get(p.rack_type.toUpperCase())) : undefined) ?? 0)
-    .filter(p => p > 0);
-  if (!powers.length) return 0;
-  const mean = powers.reduce((a, b) => a + b, 0) / powers.length;
-  return Math.sqrt(powers.reduce((acc, p) => acc + (p - mean) ** 2, 0) / powers.length);
-}
-
-// ── SVG icons ────────────────────────────────────────────────────────────────
-const IcoLightning = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M13 2 3.5 13.5h7L8 22l12.5-12H13L16 2z" />
-  </svg>
-);
-const IcoSpinner = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="animate-spin">
-    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
-  </svg>
-);
-const IcoPencil = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const IcoReset = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
-  </svg>
-);
-const IcoChevronLeft = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m15 18-6-6 6-6" />
-  </svg>
-);
-const IcoChevronRight = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m9 18 6-6-6-6" />
-  </svg>
-);
-const IcoPlay = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4z" /></svg>
-);
-const IcoPause = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
-  </svg>
-);
-const IcoActivity = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 12h4l3-8 4 16 3-8h4" />
-  </svg>
-);
-const IcoStar = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
-    <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z" />
-  </svg>
-);
-const IcoArrowRight = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 12h14M12 5l7 7-7 7" />
-  </svg>
-);
 
 // ── App ──────────────────────────────────────────────────────────────────────
 function App() {
@@ -225,7 +164,6 @@ function App() {
   }, [currentSuite, plannedMoves, plan]);
 
   // ── Simulation stats ─────────────────────────────────────────────────────
-  // Normalise keys to uppercase so lookup works regardless of backend case
   const rackPowerMap = useMemo(
     () => new Map((plan?.rack_types ?? []).map(r => [r.name.toUpperCase(), r.power_need])),
     [plan]
@@ -235,12 +173,13 @@ function App() {
     return simWeek === 0 ? initialSimPositions : scheduleResults[simWeek - 1].grid_positions;
   }, [scheduleResults, simWeek, initialSimPositions]);
 
-  const movesUpToNow      = useMemo(() => (scheduleResults ?? []).slice(0, simWeek).reduce((a, w) => a + w.racks_replaced, 0), [scheduleResults, simWeek]);
+  const movesUpToNow       = useMemo(() => (scheduleResults ?? []).slice(0, simWeek).reduce((a, w) => a + w.racks_replaced, 0), [scheduleResults, simWeek]);
   const totalRacksReplaced = useMemo(() => (scheduleResults ?? []).reduce((a, w) => a + w.racks_replaced, 0), [scheduleResults]);
   const completionPct      = totalWeeks > 0 ? Math.round((simWeek / totalWeeks) * 100) : 0;
   const initialStd         = useMemo(() => computeStdDev(initialSimPositions ?? [], rackPowerMap), [initialSimPositions, rackPowerMap]);
   const currentStd         = useMemo(() => computeStdDev(currentSimPositions, rackPowerMap), [currentSimPositions, rackPowerMap]);
   const variancePct        = initialStd > 0 ? ((initialStd - currentStd) / initialStd) * 100 : 0;
+  const sliderPct          = totalWeeks > 0 ? (simWeek / totalWeeks) * 100 : 0;
 
   const currentWeekData    = isSimMode && simWeek > 0 ? scheduleResults![simWeek - 1] : null;
   const changedPositions: ChangedPosition[] = currentWeekData?.changed_positions ?? [];
@@ -251,8 +190,16 @@ function App() {
     return days;
   }, [currentWeekData]);
   const maxPerDay = Math.max(...dailyDist, 1);
-  const sliderPct = totalWeeks > 0 ? (simWeek / totalWeeks) * 100 : 0;
 
+  // ── Back to landing ──────────────────────────────────────────────────────
+  const handleBackToLanding = () => {
+    setPlan(null); setFileName(''); setSelectedSuiteIndex(0);
+    setPlannedMoves([]); setHighlightedCells(null);
+    setScheduleResults(null); setInitialSimPositions(null);
+    setSimWeek(0); setIsPlaying(false); setError('');
+  };
+
+  // ── Rack selection ───────────────────────────────────────────────────────
   const handleRackSelect = (newType: string | null) => {
     if (!modalPos || !localGrid) return;
     const currentType = localGrid[modalPos.row][modalPos.col];
@@ -265,44 +212,32 @@ function App() {
     setModalPos(null);
   };
 
+  // ── Download ─────────────────────────────────────────────────────────────
+  const handleDownloadResults = () => {
+    if (!plan || !scheduleResults) return;
+    const finalPositions = scheduleResults[scheduleResults.length - 1].grid_positions;
+    const optimizedPositions = finalPositions
+      .filter(p => p.rack_type !== null)
+      .map(p => ({ rack_type: p.rack_type as string, row: String(p.row), position: String(p.position) }));
+    const optimizedSuite = {
+      ...(modifiedSuite ?? currentSuite ?? plan.cluster_plans[selectedSuiteIndex]),
+      positions: optimizedPositions,
+    };
+    const planToExport: ClusterPlan = {
+      ...plan,
+      cluster_plans: plan.cluster_plans.map((s, i) => i === selectedSuiteIndex ? optimizedSuite : s),
+    };
+    const blob = new Blob([JSON.stringify(planToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cluster-plan_${fileName.replace('.json', '')}_optimized.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const rows = displayGrid?.length || 0;
   const cols = displayGrid?.[0]?.length || 0;
-
-const handleDownloadResults = () => {
-  if (!plan || !scheduleResults) return;
-
-  // Use the final optimized grid positions from the last simulation week
-  const finalPositions = scheduleResults[scheduleResults.length - 1].grid_positions;
-  const optimizedPositions = finalPositions
-    .filter(p => p.rack_type !== null)
-    .map(p => ({
-      rack_type: p.rack_type as string,
-      row: String(p.row),
-      position: String(p.position),
-    }));
-
-  const optimizedSuite = {
-    ...(modifiedSuite ?? currentSuite ?? plan.cluster_plans[selectedSuiteIndex]),
-    positions: optimizedPositions,
-  };
-
-  const planToExport: ClusterPlan = {
-    ...plan,
-    cluster_plans: plan.cluster_plans.map((s, i) =>
-      i === selectedSuiteIndex ? optimizedSuite : s
-    ),
-  };
-
-  const blob = new Blob([JSON.stringify(planToExport, null, 2)], {
-    type: 'application/json',
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `cluster-plan_${fileName.replace('.json', '')}_optimized.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -311,6 +246,17 @@ const handleDownloadResults = () => {
       {/* ── Header ── */}
       <div className="flex justify-between items-center mb-5 pb-4 border-b border-[#1e2028]">
         <h2 className="m-0 text-lg flex items-center gap-2.5">
+          {plan && (
+            <button
+              onClick={handleBackToLanding}
+              className="text-[#555] hover:text-white transition-colors mr-1 flex items-center"
+              aria-label="Back to landing"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+          )}
           <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
           <span style={{ color: 'hsl(210 100% 56%)' }} className="font-semibold">Data Centre Suite</span>
           {plan && (
@@ -444,257 +390,47 @@ const handleDownloadResults = () => {
 
             {/* Planned modifications (edit mode only) */}
             {!isSimMode && plannedMoves.length > 0 && (
-
-              <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-semibold text-[14px]">Planned Modifications ({plannedMoves.length})</span>
-                  <button onClick={() => setPlannedMoves([])}
-                    className="text-xs text-red-400 bg-red-500/10 px-3 py-1 rounded border border-red-500/30 hover:bg-red-500/20 transition-colors">
-                    Clear All
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {plannedMoves.map((m, i) => (
-                    <div key={i} className="bg-[#0d1017] px-3 py-2 rounded border border-[#1e2028] text-sm flex justify-between items-center">
-                      <span className="flex items-center gap-2">
-                        <span className="text-[#555] font-mono">R{m.row.toString().padStart(2,'0')} P{m.col}</span>
-                        <IcoArrowRight />
-                        <span className="font-mono font-semibold" style={{ color: m.rackType ? 'hsl(210 100% 56%)' : 'hsl(160 84% 45%)' }}>
-                          {m.rackType || 'EMPTY'}
-                        </span>
-                      </span>
-                      <button onClick={() => setPlannedMoves(prev => prev.filter((_, idx) => idx !== i))}
-                        className="text-[#555] hover:text-white text-xs transition-colors">Undo</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PlannedModifications
+                moves={plannedMoves}
+                onClear={() => setPlannedMoves([])}
+                onUndo={i => setPlannedMoves(prev => prev.filter((_, idx) => idx !== i))}
+              />
             )}
-
           </div>
 
           {/* ── Right: sidebar ── */}
           <div className="w-80 shrink-0 flex flex-col gap-3">
-
             {isSimMode && (
-              <>
-              {/* Download button */}
-              <button
-                onClick={handleDownloadResults}
-                className="py-2.5 px-4 rounded-md text-[13px] font-semibold border border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Download Optimized JSON
-              </button>
-
-              {/* Timeline card */}
-              <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color: 'hsl(210 100% 56%)' }}>Timeline</span>
-                  <span className="text-[14px] font-semibold text-white">
-                    Week <span className="font-bold" style={{ color: 'hsl(210 100% 56%)' }}>{simWeek}</span> of {totalWeeks}
-                  </span>
-                </div>
-
-                <input
-                  type="range" min={0} max={totalWeeks} value={simWeek}
-                  onChange={e => { setIsPlaying(false); setSimWeek(Number(e.target.value)); }}
-                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer mb-1.5"
-                  style={{
-                    background: `linear-gradient(to right, hsl(210 100% 56%) 0%, hsl(210 100% 56%) ${sliderPct}%, hsl(222 15% 20%) ${sliderPct}%, hsl(222 15% 20%) 100%)`,
-                  }}
-                />
-                <div className="flex justify-between px-0.5 mb-5">
-                  {Array.from({ length: totalWeeks + 1 }, (_, i) => (
-                    <span key={i} className="text-[10px] text-[#444] font-mono">{i}</span>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-center gap-3">
-                  {/* Reset */}
-                  <button onClick={() => { setIsPlaying(false); setSimWeek(0); }}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-[#666] hover:text-white hover:border-[#444] transition-colors">
-                    <IcoReset />
-                  </button>
-                  {/* Prev */}
-                  <button onClick={() => { setIsPlaying(false); setSimWeek(w => Math.max(0, w - 1)); }}
-                    disabled={simWeek === 0}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-white disabled:text-[#2a2d35] disabled:border-[#1e2028] hover:bg-[#2a2d35] transition-colors">
-                    <IcoChevronLeft />
-                  </button>
-                  {/* Play/Pause */}
-                  <button
-                    onClick={() => { if (simWeek >= totalWeeks) setSimWeek(0); setIsPlaying(p => !p); }}
-                    className="w-12 h-12 flex items-center justify-center rounded-xl transition-colors text-white"
-                    style={{ backgroundColor: isPlaying ? 'hsl(210 60% 28%)' : 'hsl(210 100% 56%)' }}
-                  >
-                    {isPlaying ? <IcoPause /> : <IcoPlay />}
-                  </button>
-                  {/* Next */}
-                  <button onClick={() => { setIsPlaying(false); setSimWeek(w => Math.min(totalWeeks, w + 1)); }}
-                    disabled={simWeek === totalWeeks}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-white disabled:text-[#2a2d35] disabled:border-[#1e2028] hover:bg-[#2a2d35] transition-colors">
-                    <IcoChevronRight />
-                  </button>
-                </div>
-              </div>
-
-              {/* Plan quality */}
-              <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <IcoStar />
-                  <span className="text-[11px] text-[#aaa] uppercase font-bold tracking-widest">Plan Quality</span>
-                </div>
-
-                {/* Completion */}
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[12px] text-[#666]">Completion</span>
-                  <span className="text-[12px] font-bold text-white">{completionPct}%</span>
-                </div>
-                <div className="h-1.5 bg-[#1e2028] rounded-full mb-5">
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${completionPct}%`,
-                      backgroundColor: completionPct === 100 ? 'hsl(160 84% 45%)' : 'hsl(210 100% 56%)',
-                    }} />
-                </div>
-
-                {/* Duration + Total Moves */}
-                <div className="grid grid-cols-2 gap-4 mb-5">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-[#444] uppercase font-bold tracking-wider mb-2">
-                      {/* calendar icon */}
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                      Duration
-                    </div>
-                    <div className="text-[20px] font-bold text-white leading-none">
-                      {totalWeeks} <span className="text-[11px] text-[#444] font-normal">weeks</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-[#444] uppercase font-bold tracking-wider mb-2">
-                      {/* pick/tool icon */}
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                      </svg>
-                      Total Moves
-                    </div>
-                    <div className="text-[20px] font-bold text-white leading-none">
-                      {movesUpToNow} <span className="text-[11px] text-[#444] font-normal">/ {totalRacksReplaced}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Power Variance */}
-                <div className="flex items-center gap-1.5 text-[10px] text-[#444] uppercase font-bold tracking-wider mb-2">
-                  {/* trend-down icon */}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
-                  </svg>
-                  Power Variance
-                </div>
-                {initialStd > 0 ? (
-                  <>
-                    <div className="text-[24px] font-bold leading-none mb-1"
-                      style={{ color: variancePct > 0 ? 'hsl(160 84% 45%)' : variancePct < 0 ? 'hsl(0 72% 55%)' : 'white' }}>
-                      {variancePct > 0 ? '−' : variancePct < 0 ? '+' : ''}{Math.abs(variancePct).toFixed(1)}%
-                    </div>
-                    <div className="text-[11px] text-[#444] font-mono mb-2">
-                      {initialStd.toFixed(1)} → {currentStd.toFixed(1)} kW std
-                    </div>
-                    {variancePct > 5 && (
-                      <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'hsl(160 84% 45%)' }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                        Row power distribution optimized
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-[13px] text-[#444]">
-                    All rack types have equal power — variance is uniform.
-                  </div>
-                )}
-              </div>
-
-              {/* Moves this week */}
-              <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <IcoActivity />
-                    <span className="text-[11px] text-[#aaa] uppercase font-bold tracking-widest">Moves This Week</span>
-                  </div>
-                  {currentWeekData && (
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border font-mono"
-                      style={{ color: 'hsl(210 100% 56%)', borderColor: 'hsl(210 100% 56% / 0.35)', backgroundColor: 'hsl(210 100% 56% / 0.10)' }}>
-                      {currentWeekData.racks_replaced} moves
-                    </span>
-                  )}
-                </div>
-
-                {currentWeekData ? (
-                  <>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[11px] text-[#555]">Daily distribution</span>
-                      <span className="text-[11px] text-[#444]">max {maxPerDay}/day</span>
-                    </div>
-                    <div className="flex gap-1 items-end h-8 mb-1">
-                      {dailyDist.map((count, i) => (
-                        <div key={i} className="flex-1 flex items-end h-full">
-                          <div className="w-full rounded-sm transition-all"
-                            style={{
-                              height: `${count > 0 ? Math.max((count / maxPerDay) * 100, 20) : 12}%`,
-                              opacity: count > 0 ? 1 : 0.25,
-                              backgroundColor: count > 0 ? 'hsl(210 100% 56%)' : 'hsl(222 15% 20%)',
-                            }} />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-1 mb-4">
-                      {['M','T','W','T','F','S','S'].map((d, i) => (
-                        <div key={i} className="flex-1 text-center text-[9px] text-[#444]">{d}</div>
-                      ))}
-                    </div>
-                    <div className="space-y-1.5 max-h-52 overflow-y-auto">
-                      {changedPositions.map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 text-[11px] text-[#666]">
-                          <IcoArrowRight />
-                          <span>
-                            <span className="font-mono text-[#888]">{p.old_rack}</span>
-                            <span className="mx-1.5 text-[#444]">→</span>
-                            <span className="font-mono text-[#ccc]">{p.new_rack}</span>
-                            <span className="ml-2 text-[#444] font-mono">R{String(p.row).padStart(2,'0')}P{p.position}</span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-[12px] text-[#444]">Press play or drag the slider to begin.</p>
-                )}
-              </div>
-
-            </>
+              <SimPanel
+                simWeek={simWeek}
+                setSimWeek={setSimWeek}
+                isPlaying={isPlaying}
+                setIsPlaying={setIsPlaying}
+                totalWeeks={totalWeeks}
+                sliderPct={sliderPct}
+                movesUpToNow={movesUpToNow}
+                totalRacksReplaced={totalRacksReplaced}
+                completionPct={completionPct}
+                variancePct={variancePct}
+                initialStd={initialStd}
+                currentStd={currentStd}
+                currentWeekData={currentWeekData}
+                changedPositions={changedPositions}
+                dailyDist={dailyDist}
+                maxPerDay={maxPerDay}
+                onDownload={handleDownloadResults}
+                onExitSim={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
+              />
             )}
 
             {/* Always-visible metrics sidebar */}
-            <Sidebar suite={modifiedSuite ?? currentSuite!} constraints={plan.constraints} viewMode={viewMode} rackTypes={plan.rack_types} className="flex flex-col gap-3" />
-
-            {isSimMode && (
-              <>
-              <button
-                onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
-                className="text-[12px] text-[#444] hover:text-white text-center py-2 transition-colors"
-              >
-                ← Back to Edit Mode
-              </button>
-              </>
-            )}
+            <Sidebar
+              suite={modifiedSuite ?? currentSuite!}
+              constraints={plan.constraints}
+              viewMode={viewMode}
+              rackTypes={plan.rack_types}
+              className="flex flex-col gap-3"
+            />
           </div>
         </div>
       ) : (
@@ -721,7 +457,7 @@ const handleDownloadResults = () => {
             <div className="bg-[#1a1d24] border border-[#2a2d35] rounded-lg p-5 text-left">
               <div className="text-[#4A90E2] text-lg font-bold mb-1">3.</div>
               <div className="text-sm font-bold text-white mb-1">Optimise</div>
-              <div className="text-xs text-[#888]">Run a 30-day simulation to upgrade racks week-by-week within power constraints.</div>
+              <div className="text-xs text-[#888]">Run a configurable simulation to upgrade racks week-by-week within power constraints.</div>
             </div>
           </div>
 
@@ -744,90 +480,16 @@ const handleDownloadResults = () => {
         />
       )}
 
-      {/* ── Optimization Settings Modal ── */}
       {showOptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.65)' }}>
-          <div className="w-[420px] rounded-2xl border border-[#2a2d35] p-6 shadow-2xl" style={{ backgroundColor: 'hsl(222 20% 10%)' }}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-[15px] font-bold text-white flex items-center gap-2">
-                <IcoLightning /> Optimization Settings
-              </h3>
-              <button onClick={() => setShowOptModal(false)} className="text-[#555] hover:text-white transition-colors text-lg leading-none">✕</button>
-            </div>
-
-            {/* Duration */}
-            <div className="mb-5">
-              <label className="block text-[11px] text-[#555] uppercase font-bold tracking-widest mb-2">
-                Duration (weeks)
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range" min={1} max={52} value={optWeeks}
-                  onChange={e => setOptWeeks(Number(e.target.value))}
-                  className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, hsl(210 100% 56%) 0%, hsl(210 100% 56%) ${((optWeeks - 1) / 51) * 100}%, hsl(222 15% 20%) ${((optWeeks - 1) / 51) * 100}%, hsl(222 15% 20%) 100%)`,
-                  }}
-                />
-                <input
-                  type="number" min={1} max={52} value={optWeeks}
-                  onChange={e => setOptWeeks(Math.min(52, Math.max(1, Number(e.target.value))))}
-                  className="w-16 text-center py-1.5 text-white text-[13px] font-mono font-bold rounded-md border border-[#2a2d35] bg-[#1a1d24] focus:outline-none focus:border-[hsl(210_100%_56%)]"
-                />
-                <span className="text-[12px] text-[#555] w-10">wks</span>
-              </div>
-              <p className="text-[11px] text-[#444] mt-1.5">{optWeeks * 7} days · ~{optWeeks * 5} working days</p>
-            </div>
-
-            {/* Max racks per day */}
-            <div className="mb-6">
-              <label className="block text-[11px] text-[#555] uppercase font-bold tracking-widest mb-2">
-                Max rack replacements / day
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range" min={1} max={100} value={optMaxPerDay}
-                  onChange={e => setOptMaxPerDay(Number(e.target.value))}
-                  className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, hsl(160 84% 45%) 0%, hsl(160 84% 45%) ${((optMaxPerDay - 1) / 99) * 100}%, hsl(222 15% 20%) ${((optMaxPerDay - 1) / 99) * 100}%, hsl(222 15% 20%) 100%)`,
-                  }}
-                />
-                <input
-                  type="number" min={1} max={100} value={optMaxPerDay}
-                  onChange={e => setOptMaxPerDay(Math.min(100, Math.max(1, Number(e.target.value))))}
-                  className="w-16 text-center py-1.5 text-white text-[13px] font-mono font-bold rounded-md border border-[#2a2d35] bg-[#1a1d24] focus:outline-none focus:border-[hsl(160_84%_45%)]"
-                />
-                <span className="text-[12px] text-[#555] w-10">/ day</span>
-              </div>
-              <p className="text-[11px] text-[#444] mt-1.5">Controls maintenance throughput — how many racks technicians can replace per day.</p>
-            </div>
-
-            {/* Mode summary */}
-            <div className="flex items-center justify-between mb-6 px-4 py-3 rounded-xl border border-[#2a2d35] bg-[#1a1d24]">
-              <span className="text-[12px] text-[#666]">Optimization mode</span>
-              <span className={`text-[12px] font-bold px-3 py-1 rounded-full border ${greenMode ? 'text-[#22C55E] border-[#22C55E]/40 bg-[#22C55E]/10' : 'text-[#aaa] border-[#2a2d35]'}`}>
-                {greenMode ? 'Green' : 'Normal'}
-              </span>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowOptModal(false)}
-                className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border border-[#2a2d35] text-[#666] hover:text-white hover:border-[#444] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleRunOptimization(optWeeks, optMaxPerDay)}
-                className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
-              >
-                <IcoLightning /> Run Optimization
-              </button>
-            </div>
-          </div>
-        </div>
+        <OptimizationModal
+          optWeeks={optWeeks}
+          setOptWeeks={setOptWeeks}
+          optMaxPerDay={optMaxPerDay}
+          setOptMaxPerDay={setOptMaxPerDay}
+          greenMode={greenMode}
+          onClose={() => setShowOptModal(false)}
+          onRun={handleRunOptimization}
+        />
       )}
     </div>
   );

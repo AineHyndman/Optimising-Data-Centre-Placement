@@ -1,5 +1,14 @@
 import type { Position, GridPosition, Constraints, SuitePlan, RackSpec } from './types';
 
+export function computeStdDev(positions: GridPosition[], powerMap: Map<string, number>): number {
+  const powers = positions
+    .map(p => (p.rack_type ? (powerMap.get(p.rack_type) ?? powerMap.get(p.rack_type.toUpperCase())) : undefined) ?? 0)
+    .filter(p => p > 0);
+  if (!powers.length) return 0;
+  const mean = powers.reduce((a, b) => a + b, 0) / powers.length;
+  return Math.sqrt(powers.reduce((acc, p) => acc + (p - mean) ** 2, 0) / powers.length);
+}
+
 const ROWS = 48;
 const COLS = 16;
 
