@@ -67,7 +67,7 @@ const CapacityCard = ({
   );
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode = 'type', rackTypes = [], className }) => {
+export const Sidebar: React.FC<SidebarProps> = React.memo(({ suite, constraints, viewMode = 'type', rackTypes = [], className }) => {
   const stats = useMemo(() => {
     const counts = { compute: 0, storage: 0, ai: 0 };
     suite.positions.forEach(pos => {
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode =
       .sort(([a], [b]) => a - b);
   }, [suite, rackTypes]);
 
-  const maxRowPower = Math.max(...powerByRow.map(([, p]) => p), 1);
+  const maxRowPower = useMemo(() => Math.max(...powerByRow.map(([, p]) => p), 1), [powerByRow]);
 
   return (
     <div className={className ?? "w-96 shrink-0 flex flex-col gap-3"}>
@@ -203,4 +203,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode =
       </div>
     </div>
   );
-};
+});

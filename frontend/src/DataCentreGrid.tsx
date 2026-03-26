@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import type { Grid } from './utils';
 import type { RackSpec } from './types';
 
@@ -18,7 +18,7 @@ const POWER_COLOR = (intensity: number): string => {
   return 'hsl(0 72% 55%)';
 };
 
-export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
+export const DataCentreGrid: React.FC<DataCentreGridProps> = React.memo(({
   grid,
   title,
   viewMode = 'type',
@@ -26,9 +26,12 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
   onCellClick,
   highlightedCells,
 }) => {
-  const maxPower = rackTypes.length > 0 ? Math.max(...rackTypes.map(r => r.power_need)) : 1;
+  const maxPower = useMemo(
+    () => rackTypes.length > 0 ? Math.max(...rackTypes.map(r => r.power_need)) : 1,
+    [rackTypes]
+  );
 
-  const getCellProps = (value: string | null): {
+  const getCellProps = useCallback((value: string | null): {
     className: string;
     style?: React.CSSProperties;
     label: string;
@@ -69,11 +72,10 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
       className: `rack-cell w-10 h-8 ${classMap[typeKey] ?? 'rack-empty'}`,
       label,
     };
-  };
+  }, [viewMode, rackTypes, maxPower]);
 
   const rows = grid.length;
   const cols = grid[0]?.length || 0;
-  const isEmptyRow = (rowIndex: number) => grid[rowIndex].every(cell => cell === null);
 
   return (
     <div className="overflow-auto">
@@ -91,7 +93,7 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
       {/* Rows */}
       <div className="flex flex-col gap-1">
         {Array.from({ length: rows }, (_, rowIndex) => {
-          if (isEmptyRow(rowIndex)) {
+          if (grid[rowIndex].every(cell => cell === null)) {
             return <div key={rowIndex} className="h-2" />;
           }
 
@@ -127,4 +129,4 @@ export const DataCentreGrid: React.FC<DataCentreGridProps> = ({
       </div>
     </div>
   );
-};
+});
