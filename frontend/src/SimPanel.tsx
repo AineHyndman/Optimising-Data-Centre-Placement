@@ -22,8 +22,9 @@ interface SimPanelProps {
   changedPositions: ChangedPosition[];
   dailyDist: number[];
   maxPerDay: number;
+  weeklyStd: number[];
   onDownload: () => void;
-  onExitSim: () => void;
+  onOpenSettings: () => void;
 }
 
 export const SimPanel: React.FC<SimPanelProps> = ({
@@ -31,13 +32,33 @@ export const SimPanel: React.FC<SimPanelProps> = ({
   totalWeeks, sliderPct, movesUpToNow, totalRacksReplaced,
   completionPct, variancePct, initialStd, currentStd,
   currentWeekData, changedPositions, dailyDist, maxPerDay,
-  onDownload, onExitSim,
-}) => (
+  weeklyStd, onDownload, onOpenSettings,
+}) => {
+  // Pre-compute chart geometry
+  const W = 252, H = 40;
+  const minV = Math.min(...weeklyStd);
+  const maxV = Math.max(...weeklyStd);
+  const range = maxV - minV || 1;
+  const n = weeklyStd.length;
+  const pts = weeklyStd.map((v, i) => ({
+    x: n > 1 ? 4 + (i / (n - 1)) * W : 4 + W / 2,
+    y: 4 + H - ((v - minV) / range) * H,
+  }));
+  // Revealed = weeks we've passed; future = what's ahead (starts at simWeek for continuity)
+  const revealedPts = pts.slice(0, simWeek + 1);
+  const futurePts   = pts.slice(simWeek);
+  const revealedPolyline = revealedPts.map(p => `${p.x},${p.y}`).join(' ');
+  const futurePolyline   = futurePts.length > 1 ? futurePts.map(p => `${p.x},${p.y}`).join(' ') : '';
+  const revealedArea = revealedPts.length > 1
+    ? `M ${revealedPts[0].x} ${revealedPts[0].y} ${revealedPts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')} L ${revealedPts[revealedPts.length - 1].x} ${4 + H} L ${revealedPts[0].x} ${4 + H} Z`
+    : '';
+  const curX = pts[simWeek]?.x ?? 4;
+
+  return (
   <>
-    {/* Download button */}
     <button
       onClick={onDownload}
-      className="py-2.5 px-4 rounded-md text-[13px] font-semibold border border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
+      className="cursor-pointer py-2.5 px-4 rounded-md text-[13px] font-semibold border-2 border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E] hover:text-gray-800 transition-colors flex items-center justify-center gap-2"
     >
       <IcoDownload /> Download Optimized JSON
     </button>
@@ -45,7 +66,16 @@ export const SimPanel: React.FC<SimPanelProps> = ({
     {/* Timeline card */}
     <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
       <div className="flex justify-between items-center mb-4">
-        <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color: 'hsl(210 100% 56%)' }}>Timeline</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color: 'hsl(210 100% 56%)' }}>Timeline</span>
+          <button
+            onClick={onOpenSettings}
+            title="Change simulation settings"
+            className="w-6 h-6 flex items-center justify-center rounded text-[#555] hover:text-white hover:bg-[#2a2d35] transition-colors cursor-pointer"
+          >
+            <IcoTool />
+          </button>
+        </div>
         <span className="text-[14px] font-semibold text-white">
           Week <span className="font-bold" style={{ color: 'hsl(210 100% 56%)' }}>{simWeek}</span> of {totalWeeks}
         </span>
@@ -68,20 +98,20 @@ export const SimPanel: React.FC<SimPanelProps> = ({
       <div className="flex items-center justify-center gap-3">
         <button
           onClick={() => { setIsPlaying(false); setSimWeek(0); }}
-          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-[#666] hover:text-white hover:border-[#444] transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-[#666] hover:text-white hover:border-[#444] transition-colors cursor-pointer"
         >
           <IcoReset />
         </button>
         <button
           onClick={() => { setIsPlaying(false); setSimWeek(w => Math.max(0, w - 1)); }}
           disabled={simWeek === 0}
-          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-white disabled:text-[#2a2d35] disabled:border-[#1e2028] hover:bg-[#2a2d35] transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-white disabled:text-[#2a2d35] disabled:border-[#1e2028] hover:bg-[#2a2d35] transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <IcoChevronLeft />
         </button>
         <button
           onClick={() => { if (simWeek >= totalWeeks) setSimWeek(0); setIsPlaying(p => !p); }}
-          className="w-12 h-12 flex items-center justify-center rounded-xl transition-colors text-white"
+          className="w-12 h-12 flex items-center justify-center rounded-xl transition-colors text-white cursor-pointer"
           style={{ backgroundColor: isPlaying ? 'hsl(210 60% 28%)' : 'hsl(210 100% 56%)' }}
         >
           {isPlaying ? <IcoPause /> : <IcoPlay />}
@@ -89,7 +119,7 @@ export const SimPanel: React.FC<SimPanelProps> = ({
         <button
           onClick={() => { setIsPlaying(false); setSimWeek(w => Math.min(totalWeeks, w + 1)); }}
           disabled={simWeek === totalWeeks}
-          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-white disabled:text-[#2a2d35] disabled:border-[#1e2028] hover:bg-[#2a2d35] transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2d35] text-white disabled:text-[#2a2d35] disabled:border-[#1e2028] hover:bg-[#2a2d35] transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <IcoChevronRight />
         </button>
@@ -134,22 +164,52 @@ export const SimPanel: React.FC<SimPanelProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 text-[10px] text-[#444] uppercase font-bold tracking-wider mb-2">
-        <IcoTrendDown /> Power Variance
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5 text-[10px] text-[#444] uppercase font-bold tracking-wider">
+          <IcoTrendDown /> Power Variance
+        </div>
+        {initialStd > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-[20px] font-bold leading-none"
+              style={{ color: variancePct > 0 ? 'hsl(160 84% 45%)' : variancePct < 0 ? 'hsl(0 72% 55%)' : 'white' }}>
+              {variancePct > 0 ? '−' : variancePct < 0 ? '+' : ''}{Math.abs(variancePct).toFixed(1)}%
+            </span>
+            {variancePct > 5 && <IcoCheck />}
+          </div>
+        )}
       </div>
       {initialStd > 0 ? (
         <>
-          <div className="text-[24px] font-bold leading-none mb-1"
-            style={{ color: variancePct > 0 ? 'hsl(160 84% 45%)' : variancePct < 0 ? 'hsl(0 72% 55%)' : 'white' }}>
-            {variancePct > 0 ? '−' : variancePct < 0 ? '+' : ''}{Math.abs(variancePct).toFixed(1)}%
-          </div>
-          <div className="text-[11px] text-[#444] font-mono mb-2">
+          <div className="text-[11px] text-[#444] font-mono mb-3">
             {initialStd.toFixed(1)} → {currentStd.toFixed(1)} kW std
           </div>
-          {variancePct > 5 && (
-            <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'hsl(160 84% 45%)' }}>
-              <IcoCheck /> Row power distribution optimized
-            </div>
+          {weeklyStd.length > 1 && (
+            <svg viewBox="0 0 260 60" className="w-full" style={{ overflow: 'visible' }}>
+              {/* Future area (faint preview) */}
+              {futurePolyline && <polyline points={futurePolyline} fill="none" stroke="hsl(160 84% 45%)" strokeWidth="1" strokeDasharray="3 3" opacity="0.2" />}
+              {/* Revealed area fill */}
+              <path d={revealedArea} fill="hsl(160 84% 45% / 0.12)" />
+              {/* Revealed line */}
+              {revealedPts.length > 1 && <polyline points={revealedPolyline} fill="none" stroke="hsl(160 84% 45%)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
+              {/* Current week vertical */}
+              <line x1={curX} y1={4} x2={curX} y2={44} stroke="hsl(210 100% 56%)" strokeWidth="1" strokeDasharray="3 2" opacity="0.7" />
+              {/* Dots */}
+              {pts.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y}
+                  r={i === simWeek ? 3.5 : 1.5}
+                  fill={i === simWeek ? 'hsl(210 100% 56%)' : 'hsl(160 84% 45%)'}
+                  stroke={i === simWeek ? 'hsl(222 18% 11%)' : 'none'}
+                  strokeWidth={i === simWeek ? 1.5 : 0}
+                  opacity={i <= simWeek ? 1 : 0.2}
+                />
+              ))}
+              {/* X-axis labels */}
+              {pts.map((p, i) => {
+                const step = Math.ceil(n / 6);
+                if (i % step !== 0 && i !== n - 1) return null;
+                return <text key={i} x={p.x} y={58} textAnchor="middle" fontSize="8" fill="#444">{i}</text>;
+              })}
+            </svg>
           )}
         </>
       ) : (
@@ -215,12 +275,6 @@ export const SimPanel: React.FC<SimPanelProps> = ({
         <p className="text-[12px] text-[#444]">Press play or drag the slider to begin.</p>
       )}
     </div>
-
-    <button
-      onClick={onExitSim}
-      className="text-[12px] text-[#444] hover:text-white text-center py-2 transition-colors"
-    >
-      ← Back to Edit Mode
-    </button>
   </>
-);
+  );
+};

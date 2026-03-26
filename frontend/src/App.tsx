@@ -8,7 +8,7 @@ import { RackSelectorModal } from './RackSelectorModal';
 import { OptimizationModal } from './OptimizationModal';
 import { PlannedModifications } from './PlannedModifications';
 import { SimPanel } from './SimPanel';
-import { IcoLightning, IcoSpinner, IcoPencil } from './icons';
+import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile } from './icons';
 
 const LOCAL_API  = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -179,6 +179,12 @@ function App() {
   const initialStd         = useMemo(() => computeStdDev(initialSimPositions ?? [], rackPowerMap), [initialSimPositions, rackPowerMap]);
   const currentStd         = useMemo(() => computeStdDev(currentSimPositions, rackPowerMap), [currentSimPositions, rackPowerMap]);
   const variancePct        = initialStd > 0 ? ((initialStd - currentStd) / initialStd) * 100 : 0;
+  const weeklyStd          = useMemo(() => {
+    if (!initialSimPositions || !scheduleResults) return [];
+    const result = [computeStdDev(initialSimPositions, rackPowerMap)];
+    scheduleResults.forEach(w => result.push(computeStdDev(w.grid_positions, rackPowerMap)));
+    return result;
+  }, [initialSimPositions, scheduleResults, rackPowerMap]);
   const sliderPct          = totalWeeks > 0 ? (simWeek / totalWeeks) * 100 : 0;
 
   const currentWeekData    = isSimMode && simWeek > 0 ? scheduleResults![simWeek - 1] : null;
@@ -246,17 +252,6 @@ function App() {
       {/* ── Header ── */}
       <div className="flex justify-between items-center mb-5 pb-4 border-b border-[#1e2028]">
         <h2 className="m-0 text-lg flex items-center gap-2.5">
-          {plan && (
-            <button
-              onClick={handleBackToLanding}
-              className="text-[#555] hover:text-white transition-colors mr-1 flex items-center"
-              aria-label="Back to landing"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </button>
-          )}
           <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
           <span style={{ color: 'hsl(210 100% 56%)' }} className="font-semibold">Data Centre Suite</span>
           {plan && (
@@ -284,7 +279,7 @@ function App() {
           {isSimMode ? (
             <button
               onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
-              className="py-2 px-4 rounded-md text-[13px] font-semibold border border-[#2a2d35] text-[#aaa] hover:text-white hover:border-[#444] transition-colors flex items-center gap-2"
+              className="cursor-pointer py-2 px-4 rounded-md text-[13px] font-semibold border border-[#2a2d35] text-[#aaa] hover:text-white hover:border-[#444] transition-colors flex items-center gap-2"
             >
               <IcoPencil /> Edit Mode
             </button>
@@ -307,7 +302,7 @@ function App() {
               <button
                 onClick={() => setShowOptModal(true)}
                 disabled={isSimulating}
-                className={`py-2 px-4 rounded-md text-[13px] font-semibold flex items-center gap-2 transition-colors border
+                className={`cursor-pointer py-2 px-4 rounded-md text-[13px] font-semibold flex items-center gap-2 transition-colors border
                   ${isSimulating
                     ? 'border-[#2a2d35] text-[#555] cursor-not-allowed'
                     : 'border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10'}`}
@@ -400,6 +395,12 @@ function App() {
 
           {/* ── Right: sidebar ── */}
           <div className="w-80 shrink-0 flex flex-col gap-3">
+            {/* Always-visible upload button */}
+            <label className="py-2.5 px-4 rounded-md text-[13px] font-semibold border-2 border-[#3B82F6]/50 text-[#3B82F6] hover:bg-[#3B82F6] hover:text-gray-800 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+              <IcoAddFile /> Upload Another File
+              <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+            </label>
+
             {isSimMode && (
               <SimPanel
                 simWeek={simWeek}
@@ -418,8 +419,9 @@ function App() {
                 changedPositions={changedPositions}
                 dailyDist={dailyDist}
                 maxPerDay={maxPerDay}
+                weeklyStd={weeklyStd}
                 onDownload={handleDownloadResults}
-                onExitSim={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
+                onOpenSettings={() => setShowOptModal(true)}
               />
             )}
 

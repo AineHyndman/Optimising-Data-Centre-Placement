@@ -103,28 +103,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ suite, constraints, viewMode =
   return (
     <div className={className ?? "w-96 shrink-0 flex flex-col gap-3"}>
 
-      {/* Status */}
-      <div className={`border py-4 px-5 rounded-xl ${
-        isValid ? 'border-green-700/50 bg-green-950/40' : 'border-red-500/50 bg-red-950/30'
-      }`}>
-        <div className={`flex items-center gap-2.5 font-bold text-[13px] mb-1 ${isValid ? 'text-green-400' : 'text-red-400'}`}>
-          {isValid ? <IconCheckCircle size={18} /> : <IconAlert size={18} />}
-          {isValid ? 'Configuration Valid' : `${violations.length} Violation${violations.length > 1 ? 's' : ''} Found`}
-        </div>
-        <div className="text-[13px] text-[#666]">
-          {isValid ? 'All services within capacity bounds' : (
-            <ul className="list-disc pl-4 text-red-400 mt-1.5 space-y-0.5">
-              {violations.map((v, i) => <li key={i}>{v}</li>)}
-            </ul>
-          )}
-        </div>
-      </div>
-
       {/* Total Power */}
-      <div className="bg-[#1a1d24] px-5 py-4 rounded-xl border border-[#1e2028]">
-        <div className="flex items-center gap-1.5 text-[11px] text-[#555] uppercase font-semibold tracking-wider mb-2">
-          <IconZap size={13} className="text-[#555]" />
-          Total Power
+      <div className={`px-5 py-4 rounded-xl border ${isValid ? 'bg-green-950/40 border-green-600/50' : 'bg-red-950/30 border-red-500/50'} bg-[#1a1d24]`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[11px] text-[#555] uppercase font-semibold tracking-wider">
+            <IconZap size={13} className="text-[#555]" />
+            Total Power
+          </div>
+          <div className={`flex items-center gap-1 text-[11px] font-semibold ${isValid ? 'text-green-400' : 'text-red-400'}`}>
+            {isValid ? <IconCheckCircle size={13} /> : <IconAlert size={13} />}
+            {isValid ? 'Configuration Valid' : `${violations.length} Violation${violations.length > 1 ? 's' : ''} Found`}
+          </div>
         </div>
         <div className={`text-[28px] font-bold leading-none ${totalPower > constraints.power_budget ? 'text-red-400' : 'text-white'}`}>
           {totalPower.toLocaleString()}
