@@ -1,7 +1,7 @@
 import type { WeeklySummaryData, ChangedPosition } from './types';
 import {
   IcoReset, IcoChevronLeft, IcoChevronRight, IcoPlay, IcoPause,
-  IcoStar, IcoActivity, IcoArrowRight, IcoDownload,
+  IcoStar, IcoActivity, IcoArrowRight,
   IcoCalendar, IcoTool, IcoTrendDown, IcoCheck,
 } from './icons';
 
@@ -23,7 +23,8 @@ interface SimPanelProps {
   dailyDist: number[];
   maxPerDay: number;
   weeklyStd: number[];
-  onDownload: () => void;
+  weeklyPower: number[];
+  weeklyReplacements: number[];
   onOpenSettings: () => void;
 }
 
@@ -32,7 +33,7 @@ export const SimPanel: React.FC<SimPanelProps> = ({
   totalWeeks, sliderPct, movesUpToNow, totalRacksReplaced,
   completionPct, variancePct, initialStd, currentStd,
   currentWeekData, changedPositions, dailyDist, maxPerDay,
-  weeklyStd, onDownload, onOpenSettings,
+  weeklyStd, weeklyPower, weeklyReplacements, onOpenSettings,
 }) => {
   // Pre-compute chart geometry
   const W = 252, H = 40;
@@ -54,28 +55,48 @@ export const SimPanel: React.FC<SimPanelProps> = ({
     : '';
   const curX = pts[simWeek]?.x ?? 4;
 
+  // Power trend chart geometry (same pattern)
+  const nP = weeklyPower.length;
+  const minP = Math.min(...weeklyPower);
+  const maxP = Math.max(...weeklyPower);
+  const rangeP = maxP - minP || 1;
+  const ptsP = weeklyPower.map((v, i) => ({
+    x: nP > 1 ? 4 + (i / (nP - 1)) * W : 4 + W / 2,
+    y: 4 + H - ((v - minP) / rangeP) * H,
+  }));
+  const revPtsP = ptsP.slice(0, simWeek + 1);
+  const futPtsP = ptsP.slice(simWeek);
+  const revPolyP = revPtsP.map(p => `${p.x},${p.y}`).join(' ');
+  const futPolyP = futPtsP.length > 1 ? futPtsP.map(p => `${p.x},${p.y}`).join(' ') : '';
+  const revAreaP = revPtsP.length > 1
+    ? `M ${revPtsP[0].x} ${revPtsP[0].y} ${revPtsP.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')} L ${revPtsP[revPtsP.length - 1].x} ${4 + H} L ${revPtsP[0].x} ${4 + H} Z`
+    : '';
+  const curPower = weeklyPower[simWeek] ?? 0;
+  const initPower = weeklyPower[0] ?? 0;
+  const powerDeltaPct = initPower > 0 ? ((curPower - initPower) / initPower) * 100 : 0;
+
+  // Migration pace bar chart
+  const maxRep = Math.max(...weeklyReplacements, 1);
+
   return (
   <>
-    <button
-      onClick={onDownload}
-      className="cursor-pointer py-2.5 px-4 rounded-md text-[13px] font-semibold border-2 border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E] hover:text-gray-800 transition-colors flex items-center justify-center gap-2"
-    >
-      <IcoDownload /> Download Optimized JSON
-    </button>
 
     {/* Timeline card */}
     <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color: 'hsl(210 100% 56%)' }}>Timeline</span>
-          <button
+        </div>
+        <button
             onClick={onOpenSettings}
             title="Change simulation settings"
             className="w-6 h-6 flex items-center justify-center rounded text-[#555] hover:text-white hover:bg-[#2a2d35] transition-colors cursor-pointer"
           >
             <IcoTool />
           </button>
-        </div>
+      </div>
+
+      <div>
         <span className="text-[14px] font-semibold text-white">
           Week <span className="font-bold" style={{ color: 'hsl(210 100% 56%)' }}>{simWeek}</span> of {totalWeeks}
         </span>
@@ -218,6 +239,83 @@ export const SimPanel: React.FC<SimPanelProps> = ({
         </div>
       )}
     </div>
+
+    {/* Total Power Trend */}
+    {weeklyPower.length > 1 && (
+      <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[10px] text-[#444] uppercase font-bold tracking-wider">
+            <IcoTrendDown /> Total Power
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[20px] font-bold leading-none"
+              style={{ color: powerDeltaPct < 0 ? 'hsl(160 84% 45%)' : powerDeltaPct > 0 ? 'hsl(0 72% 55%)' : 'white' }}>
+              {powerDeltaPct > 0 ? '+' : ''}{powerDeltaPct.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+        <div className="text-[11px] text-[#444] font-mono mb-3">
+          {Math.round(initPower).toLocaleString()} → {Math.round(curPower).toLocaleString()} kW
+        </div>
+        <svg viewBox="0 0 260 60" className="w-full" style={{ overflow: 'visible' }}>
+          {futPolyP && <polyline points={futPolyP} fill="none" stroke="hsl(38 95% 55%)" strokeWidth="1" strokeDasharray="3 3" opacity="0.2" />}
+          <path d={revAreaP} fill="hsl(38 95% 55% / 0.1)" />
+          {revPtsP.length > 1 && <polyline points={revPolyP} fill="none" stroke="hsl(38 95% 55%)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
+          <line x1={ptsP[simWeek]?.x ?? 4} y1={4} x2={ptsP[simWeek]?.x ?? 4} y2={44} stroke="hsl(210 100% 56%)" strokeWidth="1" strokeDasharray="3 2" opacity="0.7" />
+          {ptsP.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y}
+              r={i === simWeek ? 3.5 : 1.5}
+              fill={i === simWeek ? 'hsl(210 100% 56%)' : 'hsl(38 95% 55%)'}
+              stroke={i === simWeek ? 'hsl(222 18% 11%)' : 'none'}
+              strokeWidth={i === simWeek ? 1.5 : 0}
+              opacity={i <= simWeek ? 1 : 0.2}
+            />
+          ))}
+          {ptsP.map((p, i) => {
+            const step = Math.ceil(nP / 6);
+            if (i % step !== 0 && i !== nP - 1) return null;
+            return <text key={i} x={p.x} y={58} textAnchor="middle" fontSize="8" fill="#444">{i}</text>;
+          })}
+        </svg>
+      </div>
+    )}
+
+    {/* Migration Pace */}
+    {weeklyReplacements.length > 0 && (
+      <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1.5 text-[10px] text-[#444] uppercase font-bold tracking-wider">
+            <IcoTool /> Migration Pace
+          </div>
+          <span className="text-[11px] text-[#555] font-mono">{weeklyReplacements.reduce((a, b) => a + b, 0)} total</span>
+        </div>
+        <div className="flex gap-0.5 items-end h-12">
+          {weeklyReplacements.map((count, i) => {
+            const isCurrent = i === simWeek - 1;
+            const isFuture  = i >= simWeek;
+            return (
+              <div key={i} className="flex-1 flex items-end h-full">
+                <div className="w-full rounded-sm transition-all duration-300"
+                  style={{
+                    height: `${count > 0 ? Math.max((count / maxRep) * 100, 8) : 4}%`,
+                    backgroundColor: isCurrent
+                      ? 'hsl(210 100% 56%)'
+                      : isFuture
+                      ? 'hsl(222 15% 20%)'
+                      : 'hsl(160 84% 45%)',
+                    opacity: isFuture ? 0.4 : 1,
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between mt-1.5 text-[9px] text-[#444] font-mono">
+          <span>W1</span>
+          <span>W{weeklyReplacements.length}</span>
+        </div>
+      </div>
+    )}
 
     {/* Moves this week */}
     <div className="rounded-xl border border-[#1e2028] p-5" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>

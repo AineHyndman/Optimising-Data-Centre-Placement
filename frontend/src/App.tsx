@@ -8,7 +8,7 @@ import { RackSelectorModal } from './RackSelectorModal';
 import { OptimizationModal } from './OptimizationModal';
 import { PlannedModifications } from './PlannedModifications';
 import { SimPanel } from './SimPanel';
-import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile } from './icons';
+import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile, IcoDownload } from './icons';
 
 const LOCAL_API  = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -45,6 +45,7 @@ function App() {
   const [showOptModal, setShowOptModal]         = useState(false);
   const [optWeeks, setOptWeeks]                 = useState(4);
   const [optMaxPerDay, setOptMaxPerDay]         = useState(32);
+  const [simTab, setSimTab]                     = useState<'sim' | 'metrics'>('sim');
 
   const isSimMode = scheduleResults !== null;
   const totalWeeks = scheduleResults?.length ?? 0;
@@ -185,6 +186,16 @@ function App() {
     scheduleResults.forEach(w => result.push(computeStdDev(w.grid_positions, rackPowerMap)));
     return result;
   }, [initialSimPositions, scheduleResults, rackPowerMap]);
+  const weeklyPower        = useMemo(() => {
+    if (!initialSimPositions || !scheduleResults) return [];
+    const week0 = initialSimPositions.reduce((sum, p) =>
+      sum + (p.rack_type ? (rackPowerMap.get(p.rack_type.toUpperCase()) ?? 0) : 0), 0);
+    return [week0, ...scheduleResults.map(w => w.total_power_usage)];
+  }, [initialSimPositions, scheduleResults, rackPowerMap]);
+  const weeklyReplacements = useMemo(
+    () => (scheduleResults ?? []).map(w => w.racks_replaced),
+    [scheduleResults]
+  );
   const sliderPct          = totalWeeks > 0 ? (simWeek / totalWeeks) * 100 : 0;
 
   const currentWeekData    = isSimMode && simWeek > 0 ? scheduleResults![simWeek - 1] : null;
@@ -270,12 +281,24 @@ function App() {
           )}
 
           {isSimMode ? (
-            <button
-              onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
-              className="cursor-pointer py-2 px-4 rounded-md text-[13px] font-semibold border border-[#2a2d35] text-[#aaa] hover:text-white hover:border-[#444] transition-colors flex items-center gap-2"
-            >
-              <IcoPencil /> Edit Mode
-            </button>
+            <>
+              <label className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#3B82F6]/50 text-[#3B82F6] hover:bg-[#3B82F6]/10 transition-colors flex items-center gap-2">
+                <IcoAddFile /> Upload File
+                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+              </label>
+              <button
+                onClick={handleDownloadResults}
+                className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center gap-2"
+              >
+                <IcoDownload /> Download JSON
+              </button>
+              <button
+                onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
+                className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#2a2d35] text-[#aaa] hover:text-white hover:border-[#444] transition-colors flex items-center gap-2"
+              >
+                <IcoPencil /> Edit Mode
+              </button>
+            </>
           ) : plan ? (
             <>
               {/* Normal / Green toggle */}
@@ -291,11 +314,15 @@ function App() {
                 <span className={`text-[12px] font-semibold ${greenMode ? 'text-[#22C55E]' : 'text-[#555]'}`}>Green</span>
               </div>
 
+              <label className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#3B82F6]/50 text-[#3B82F6] hover:bg-[#3B82F6]/10 transition-colors flex items-center gap-2">
+                <IcoAddFile /> Upload File
+                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+              </label>
               {/* Run Optimization */}
               <button
                 onClick={() => setShowOptModal(true)}
                 disabled={isSimulating}
-                className={`cursor-pointer py-2 px-4 rounded-md text-[13px] font-semibold flex items-center gap-2 transition-colors border
+                className={`cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold flex items-center gap-2 transition-colors border
                   ${isSimulating
                     ? 'border-[#2a2d35] text-[#555] cursor-not-allowed'
                     : 'border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10'}`}
@@ -388,13 +415,29 @@ function App() {
 
           {/* ── Right: sidebar ── */}
           <div className="w-80 shrink-0 flex flex-col gap-3">
-            {/* Always-visible upload button */}
-            <label className="py-2.5 px-4 rounded-md text-[13px] font-semibold border-2 border-[#3B82F6]/50 text-[#3B82F6] hover:bg-[#3B82F6] hover:text-gray-800 transition-colors flex items-center justify-center gap-2 cursor-pointer">
-              <IcoAddFile /> Upload Another File
-              <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
-            </label>
 
+            {/* Tab bar — sim mode only */}
             {isSimMode && (
+              <div className="flex rounded-lg border border-[#1e2028] overflow-hidden" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
+                {(['sim', 'metrics'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setSimTab(tab)}
+                    className={`flex-1 py-2 text-[12px] font-semibold tracking-wide transition-colors cursor-pointer ${
+                      simTab === tab
+                        ? 'text-white'
+                        : 'text-[#555] hover:text-[#aaa]'
+                    }`}
+                    style={simTab === tab ? { backgroundColor: 'hsl(222 15% 18%)' } : {}}
+                  >
+                    {tab === 'sim' ? 'Simulation' : 'Metrics'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Simulation tab */}
+            {(!isSimMode || simTab === 'sim') && isSimMode && (
               <SimPanel
                 simWeek={simWeek}
                 setSimWeek={setSimWeek}
@@ -413,19 +456,22 @@ function App() {
                 dailyDist={dailyDist}
                 maxPerDay={maxPerDay}
                 weeklyStd={weeklyStd}
-                onDownload={handleDownloadResults}
+                weeklyPower={weeklyPower}
+                weeklyReplacements={weeklyReplacements}
                 onOpenSettings={() => setShowOptModal(true)}
               />
             )}
 
-            {/* Always-visible metrics sidebar */}
-            <Sidebar
-              suite={modifiedSuite ?? currentSuite!}
-              constraints={plan.constraints}
-              viewMode={viewMode}
-              rackTypes={plan.rack_types}
-              className="flex flex-col gap-3"
-            />
+            {/* Metrics tab (always shown in edit mode, tab-gated in sim mode) */}
+            {(!isSimMode || simTab === 'metrics') && (
+              <Sidebar
+                suite={modifiedSuite ?? currentSuite!}
+                constraints={plan.constraints}
+                viewMode={viewMode}
+                rackTypes={plan.rack_types}
+                className="flex flex-col gap-3"
+              />
+            )}
           </div>
         </div>
       ) : (
