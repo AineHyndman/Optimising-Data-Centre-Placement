@@ -254,12 +254,12 @@ function App() {
     <div className="px-6 py-4 min-h-screen text-white font-sans" style={{ backgroundColor: 'hsl(222 20% 8%)' }}>
 
       {/* ── Header ── */}
-      <div className="flex justify-between items-center mb-5 pb-4 border-b border-[#1e2028]">
+      <div className="flex justify-between items-center mb-5">
         <h2 className="m-0 text-lg flex items-center gap-2.5">
           <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
           <span style={{ color: 'hsl(210 100% 56%)' }} className="font-semibold">Data Centre Suite</span>
           {plan && (
-            <span className="text-[#555] text-[13px] font-normal border-l border-[#222] pl-3 ml-1 font-mono">
+            <span className="text-[#555] text-[13px] font-normal pl-3 ml-1 font-mono">
               <span className="text-[#aaa] font-semibold mr-2">{fileName}</span>
               ({rows}×{cols})
             </span>
@@ -332,7 +332,30 @@ function App() {
             </>
           ) : null}
         </div>
+
       </div>
+
+      {/* Neon LED bar */}
+        <div className="w-full mb-4" style={{ height: '6px', position: 'relative' }}>
+          {/* Outer soft glow */}
+          <div style={{
+            position: 'absolute', inset: '-6px 0',
+            background: 'linear-gradient(90deg, transparent 0%, #1d6fce 20%, #3B82F6 50%, #1d6fce 80%, transparent 100%)',
+            filter: 'blur(8px)', opacity: 0.6,
+          }} />
+          {/* Mid glow */}
+          <div style={{
+            position: 'absolute', inset: '-2px 0',
+            background: 'linear-gradient(90deg, transparent 0%, #2563eb 15%, #60a5fa 50%, #2563eb 85%, transparent 100%)',
+            filter: 'blur(3px)', opacity: 0.9,
+          }} />
+          {/* Core bright line */}
+          <div style={{
+            position: 'absolute', inset: '1px 4px',
+            background: 'linear-gradient(90deg, transparent 0%, #bfdbfe 20%, #ffffff 50%, #bfdbfe 80%, transparent 100%)',
+            borderRadius: '9999px',
+          }} />
+        </div>
 
       {error && <div className="text-red-400 mb-4 text-sm">{error}</div>}
 
