@@ -1,16 +1,18 @@
 import React, { useMemo } from 'react';
-import type { SuitePlan, Constraints, RackSpec } from './types';
+import type { SuitePlan, Constraints, RackSpec, WeeklySummaryData } from './types';
 import { computeViolations } from './utils';
 import {
   IconCheckCircle, IconAlert, IconZap,
   IconCpu, IconHardDrive, IconBrain, IconBox,
 } from './icons';
 
+
 interface SidebarProps {
   suite: SuitePlan;
   constraints: Constraints;
   viewMode?: 'type' | 'power';
   rackTypes: RackSpec[];
+  currentWeekData?: WeeklySummaryData | null;
   className?: string;
 }
 
@@ -67,7 +69,7 @@ const CapacityCard = ({
   );
 };
 
-export const Sidebar: React.FC<SidebarProps> = React.memo(({ suite, constraints, viewMode = 'type', rackTypes = [], className }) => {
+export const Sidebar: React.FC<SidebarProps> = React.memo(({ suite, constraints, viewMode = 'type', rackTypes = [], currentWeekData, className }) => {
   const stats = useMemo(() => {
     const counts = { compute: 0, storage: 0, ai: 0 };
     suite.positions.forEach(pos => {
@@ -81,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({ suite, constraints,
 
   const violations = useMemo(() => computeViolations(suite, constraints, rackTypes), [suite, constraints, rackTypes]);
   const isValid = violations.length === 0;
-  const totalPower = typeof suite.total_power_usage === 'number' ? suite.total_power_usage : 0;
+  const totalPower = currentWeekData?.total_power_usage ?? (typeof suite.total_power_usage === 'number' ? suite.total_power_usage : 0);
 
   // Power by row
   const powerByRow = useMemo(() => {
@@ -126,9 +128,9 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({ suite, constraints,
         <div className="text-[10px] text-[#444] uppercase font-bold tracking-widest mb-2 px-1">
           Service Capacity (RSU)
         </div>
-        <CapacityCard type="compute" value={suite.compute ?? stats.compute} range={constraints.compute_range} maxScale={600} />
-        <CapacityCard type="storage" value={suite.storage ?? stats.storage} range={constraints.storage_range} maxScale={300} />
-        <CapacityCard type="ai"      value={suite.ai      ?? stats.ai}      range={constraints.ai_range}      maxScale={400} />
+        <CapacityCard type="compute" value={currentWeekData?.rsu_totals.compute ?? suite.compute ?? stats.compute} range={constraints.compute_range} maxScale={600} />
+        <CapacityCard type="storage" value={currentWeekData?.rsu_totals.storage ?? suite.storage ?? stats.storage} range={constraints.storage_range} maxScale={300} />
+        <CapacityCard type="ai"      value={currentWeekData?.rsu_totals.ai      ?? suite.ai      ?? stats.ai}      range={constraints.ai_range}      maxScale={400} />
       </div>
 
       {/* Power by Row */}
