@@ -197,13 +197,6 @@ function App() {
   }, [currentWeekData]);
   const maxPerDay = Math.max(...dailyDist, 1);
 
-  // ── Back to landing ──────────────────────────────────────────────────────
-  const handleBackToLanding = () => {
-    setPlan(null); setFileName(''); setSelectedSuiteIndex(0);
-    setPlannedMoves([]); setHighlightedCells(null);
-    setScheduleResults(null); setInitialSimPositions(null);
-    setSimWeek(0); setIsPlaying(false); setError('');
-  };
 
   // ── Rack selection ───────────────────────────────────────────────────────
   const handleRackSelect = (newType: string | null) => {
