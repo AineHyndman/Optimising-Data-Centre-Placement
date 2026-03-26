@@ -257,7 +257,7 @@ function App() {
       <div className="flex justify-between items-center mb-5">
         <h2 className="m-0 text-lg flex items-center gap-2.5">
           <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
-          <span style={{ color: 'hsl(210 100% 56%)' }} className="font-semibold">Data Centre Suite</span>
+          <span style={{ color: 'hsl(210 100% 56%)', fontFamily: 'MyFont', fontSize: '1.3rem' }} className="font-semibold">Data Centre Suite</span>
           {plan && (
             <span className="text-[#555] text-[13px] font-normal pl-3 ml-1 font-mono">
               <span className="text-[#aaa] font-semibold mr-2">{fileName}</span>
@@ -502,9 +502,14 @@ function App() {
         <div className="flex flex-col items-center justify-center mt-16 max-w-[700px] mx-auto text-center">
           <div className="flex items-center gap-3 mb-3">
             <img src="/meta.png" alt="Meta" className="h-10 w-auto" />
-            <span className="text-3xl font-bold text-white">Data Centre Suite</span>
+            <span style={{ 
+              color: '#ffffff', 
+              fontFamily: 'MyFont', 
+              textShadow: '0 0 2px #fff ,0 0 25px #3B82F6, 0 0 50px #3B82F6, 0 0 90px #3B82F6, 0 0 140px #2563eb', 
+              fontSize: '2.5rem',
+              }} className="font-semibold">Data Centre Suite</span>
           </div>
-          <p className="text-[#888] text-sm mb-10 max-w-[480px]">
+          <p style={{fontFamily: 'MyFont'}} className="text-[#888] text-sm mb-10 max-w-[480px]">
             Visualise rack layouts, run weekly optimisation schedules, and track hardware upgrades across your data centre fleet.
           </p>
 
