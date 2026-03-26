@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import type { SuitePlan, Constraints, RackSpec } from './types';
+import type { SuitePlan, Constraints, RackSpec, WeeklySummaryData } from './types';
 import { computeViolations } from './utils';
 import {
   IconCheckCircle, IconAlert, IconZap,
   IconCpu, IconHardDrive, IconBrain, IconBox,
 } from './icons';
+
 
 interface SidebarProps {
   suite: SuitePlan;
