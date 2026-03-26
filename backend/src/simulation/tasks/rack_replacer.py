@@ -101,11 +101,20 @@ class RackReplacer:
 
         match new_rack.type:
             case "Compute":
-                self.Compute_RSU_change += new_rack.capacity - old_rack.capacity
+                self.Compute_RSU_change += new_rack.capacity
             case "Storage":
-                self.Storage_RSU_change += new_rack.capacity - old_rack.capacity
+                self.Storage_RSU_change += new_rack.capacity
             case "AI":
-                self.AI_RSU_change += new_rack.capacity - old_rack.capacity
+                self.AI_RSU_change += new_rack.capacity
+        
+        match old_rack.type:
+            case "Compute":
+                self.Compute_RSU_change -= old_rack.capacity
+            case "Storage":
+                self.Storage_RSU_change -= old_rack.capacity
+            case "AI":
+                self.AI_RSU_change -= old_rack.capacity
+        
 
         self.racks_changed += 1
         self.net_power_change += new_rack.powerNeed - rack.powerNeed
@@ -251,11 +260,13 @@ class RackReplacer:
                 if self.racks_changed >= self.max_moves_per_day:
                     break
                 state = self.replace_rack(state, pos, constraint, green)
+
         else:
             for pos in state.get_ordered_rows():
                 if self.racks_changed >= self.max_moves_per_day:
                     break
                 state = self.emergency_replace_rack(state, pos, constraint)
+
 
 
         # Added the history integration into this

@@ -31,14 +31,28 @@ def choose_rack(state: SuiteState, old_rack: Rack, constraint: Constraints):
     """
     match new_rack.type:
         case "Compute":
-            if state.get_rsu_per_service()["Compute"] + new_rack.capacity - old_rack.capacity > constraint.compute_max:
-                return(Rack(""))
+            if new_rack.type == old_rack.type:
+                if state.get_rsu_per_service()["Compute"] + new_rack.capacity - old_rack.capacity > constraint.compute_max:
+                    return(Rack(""))
+            else:
+                if state.get_rsu_per_service()["Compute"] + new_rack.capacity > constraint.compute_max:
+                    return(Rack(""))
         case "Storage":
-            if state.get_rsu_per_service()["Storage"] + new_rack.capacity - old_rack.capacity > constraint.storage_max:
-                return(Rack(""))
+            if new_rack.type == old_rack.type:
+                if state.get_rsu_per_service()["Storage"] + new_rack.capacity - old_rack.capacity > constraint.storage_max:
+                    return(Rack(""))
+            else:
+                if state.get_rsu_per_service()["Storage"] + new_rack.capacity > constraint.storage_max:
+                    return(Rack(""))
+
         case "AI":
-            if state.get_rsu_per_service()["AI"] + new_rack.capacity - old_rack.capacity > constraint.AI_max:
-                return(Rack(""))
+            if new_rack.type == old_rack.type:
+                if state.get_rsu_per_service()["AI"] + new_rack.capacity - old_rack.capacity > constraint.AI_max:
+                    return(Rack(""))
+            else:
+                if state.get_rsu_per_service()["AI"] + new_rack.capacity > constraint.AI_max:
+                    return(Rack(""))
+
     
     return new_rack
 
