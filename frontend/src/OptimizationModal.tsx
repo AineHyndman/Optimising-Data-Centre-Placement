@@ -82,13 +82,13 @@ export const OptimizationModal: React.FC<OptimizationModalProps> = ({
       <div className="flex gap-3">
         <button
           onClick={onClose}
-          className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border border-[#2a2d35] text-[#666] hover:text-white hover:border-[#444] transition-colors"
+          className="cursor-pointer flex-1 py-2.5 rounded-lg text-[13px] font-semibold border border-[#2a2d35] text-[#666] hover:text-white hover:border-[#444] transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={() => onRun(optWeeks, optMaxPerDay)}
-          className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
+          className="cursor-pointer flex-1 py-2.5 rounded-lg text-[13px] font-semibold border border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center justify-center gap-2"
         >
           <IcoLightning /> Run Optimization
         </button>

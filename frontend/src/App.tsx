@@ -8,7 +8,7 @@ import { RackSelectorModal } from './RackSelectorModal';
 import { OptimizationModal } from './OptimizationModal';
 import { PlannedModifications } from './PlannedModifications';
 import { SimPanel } from './SimPanel';
-import { IcoLightning, IcoSpinner, IcoPencil } from './icons';
+import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile, IcoDownload } from './icons';
 
 const LOCAL_API  = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -45,6 +45,7 @@ function App() {
   const [showOptModal, setShowOptModal]         = useState(false);
   const [optWeeks, setOptWeeks]                 = useState(4);
   const [optMaxPerDay, setOptMaxPerDay]         = useState(32);
+  const [simTab, setSimTab]                     = useState<'sim' | 'metrics'>('sim');
 
   const isSimMode = scheduleResults !== null;
   const totalWeeks = scheduleResults?.length ?? 0;
@@ -179,6 +180,22 @@ function App() {
   const initialStd         = useMemo(() => computeStdDev(initialSimPositions ?? [], rackPowerMap), [initialSimPositions, rackPowerMap]);
   const currentStd         = useMemo(() => computeStdDev(currentSimPositions, rackPowerMap), [currentSimPositions, rackPowerMap]);
   const variancePct        = initialStd > 0 ? ((initialStd - currentStd) / initialStd) * 100 : 0;
+  const weeklyStd          = useMemo(() => {
+    if (!initialSimPositions || !scheduleResults) return [];
+    const result = [computeStdDev(initialSimPositions, rackPowerMap)];
+    scheduleResults.forEach(w => result.push(computeStdDev(w.grid_positions, rackPowerMap)));
+    return result;
+  }, [initialSimPositions, scheduleResults, rackPowerMap]);
+  const weeklyPower        = useMemo(() => {
+    if (!initialSimPositions || !scheduleResults) return [];
+    const week0 = initialSimPositions.reduce((sum, p) =>
+      sum + (p.rack_type ? (rackPowerMap.get(p.rack_type.toUpperCase()) ?? 0) : 0), 0);
+    return [week0, ...scheduleResults.map(w => w.total_power_usage)];
+  }, [initialSimPositions, scheduleResults, rackPowerMap]);
+  const weeklyReplacements = useMemo(
+    () => (scheduleResults ?? []).map(w => w.racks_replaced),
+    [scheduleResults]
+  );
   const sliderPct          = totalWeeks > 0 ? (simWeek / totalWeeks) * 100 : 0;
 
   const currentWeekData    = isSimMode && simWeek > 0 ? scheduleResults![simWeek - 1] : null;
@@ -191,13 +208,6 @@ function App() {
   }, [currentWeekData]);
   const maxPerDay = Math.max(...dailyDist, 1);
 
-  // ── Back to landing ──────────────────────────────────────────────────────
-  const handleBackToLanding = () => {
-    setPlan(null); setFileName(''); setSelectedSuiteIndex(0);
-    setPlannedMoves([]); setHighlightedCells(null);
-    setScheduleResults(null); setInitialSimPositions(null);
-    setSimWeek(0); setIsPlaying(false); setError('');
-  };
 
   // ── Rack selection ───────────────────────────────────────────────────────
   const handleRackSelect = (newType: string | null) => {
@@ -246,17 +256,6 @@ function App() {
       {/* ── Header ── */}
       <div className="flex justify-between items-center mb-5 pb-4 border-b border-[#1e2028]">
         <h2 className="m-0 text-lg flex items-center gap-2.5">
-          {plan && (
-            <button
-              onClick={handleBackToLanding}
-              className="text-[#555] hover:text-white transition-colors mr-1 flex items-center"
-              aria-label="Back to landing"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </button>
-          )}
           <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
           <span style={{ color: 'hsl(210 100% 56%)' }} className="font-semibold">Data Centre Suite</span>
           {plan && (
@@ -282,12 +281,24 @@ function App() {
           )}
 
           {isSimMode ? (
-            <button
-              onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
-              className="py-2 px-4 rounded-md text-[13px] font-semibold border border-[#2a2d35] text-[#aaa] hover:text-white hover:border-[#444] transition-colors flex items-center gap-2"
-            >
-              <IcoPencil /> Edit Mode
-            </button>
+            <>
+              <label className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#3B82F6]/50 text-[#3B82F6] hover:bg-[#3B82F6]/10 transition-colors flex items-center gap-2">
+                <IcoAddFile /> Upload File
+                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+              </label>
+              <button
+                onClick={handleDownloadResults}
+                className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#22C55E]/50 text-[#22C55E] hover:bg-[#22C55E]/10 transition-colors flex items-center gap-2"
+              >
+                <IcoDownload /> Download JSON
+              </button>
+              <button
+                onClick={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
+                className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#2a2d35] text-[#aaa] hover:text-white hover:border-[#444] transition-colors flex items-center gap-2"
+              >
+                <IcoPencil /> Edit Mode
+              </button>
+            </>
           ) : plan ? (
             <>
               {/* Normal / Green toggle */}
@@ -303,11 +314,15 @@ function App() {
                 <span className={`text-[12px] font-semibold ${greenMode ? 'text-[#22C55E]' : 'text-[#555]'}`}>Green</span>
               </div>
 
+              <label className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#3B82F6]/50 text-[#3B82F6] hover:bg-[#3B82F6]/10 transition-colors flex items-center gap-2">
+                <IcoAddFile /> Upload File
+                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+              </label>
               {/* Run Optimization */}
               <button
                 onClick={() => setShowOptModal(true)}
                 disabled={isSimulating}
-                className={`py-2 px-4 rounded-md text-[13px] font-semibold flex items-center gap-2 transition-colors border
+                className={`cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold flex items-center gap-2 transition-colors border
                   ${isSimulating
                     ? 'border-[#2a2d35] text-[#555] cursor-not-allowed'
                     : 'border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10'}`}
@@ -400,7 +415,29 @@ function App() {
 
           {/* ── Right: sidebar ── */}
           <div className="w-80 shrink-0 flex flex-col gap-3">
+
+            {/* Tab bar — sim mode only */}
             {isSimMode && (
+              <div className="flex rounded-lg border border-[#1e2028] overflow-hidden" style={{ backgroundColor: 'hsl(222 18% 11%)' }}>
+                {(['sim', 'metrics'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setSimTab(tab)}
+                    className={`flex-1 py-2 text-[12px] font-semibold tracking-wide transition-colors cursor-pointer ${
+                      simTab === tab
+                        ? 'text-white'
+                        : 'text-[#555] hover:text-[#aaa]'
+                    }`}
+                    style={simTab === tab ? { backgroundColor: 'hsl(222 15% 18%)' } : {}}
+                  >
+                    {tab === 'sim' ? 'Simulation' : 'Metrics'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Simulation tab */}
+            {(!isSimMode || simTab === 'sim') && isSimMode && (
               <SimPanel
                 simWeek={simWeek}
                 setSimWeek={setSimWeek}
@@ -418,19 +455,23 @@ function App() {
                 changedPositions={changedPositions}
                 dailyDist={dailyDist}
                 maxPerDay={maxPerDay}
-                onDownload={handleDownloadResults}
-                onExitSim={() => { setScheduleResults(null); setSimWeek(0); setIsPlaying(false); }}
+                weeklyStd={weeklyStd}
+                weeklyPower={weeklyPower}
+                weeklyReplacements={weeklyReplacements}
+                onOpenSettings={() => setShowOptModal(true)}
               />
             )}
 
-            {/* Always-visible metrics sidebar */}
-            <Sidebar
-              suite={modifiedSuite ?? currentSuite!}
-              constraints={plan.constraints}
-              viewMode={viewMode}
-              rackTypes={plan.rack_types}
-              className="flex flex-col gap-3"
-            />
+            {/* Metrics tab (always shown in edit mode, tab-gated in sim mode) */}
+            {(!isSimMode || simTab === 'metrics') && (
+              <Sidebar
+                suite={modifiedSuite ?? currentSuite!}
+                constraints={plan.constraints}
+                viewMode={viewMode}
+                rackTypes={plan.rack_types}
+                className="flex flex-col gap-3"
+              />
+            )}
           </div>
         </div>
       ) : (
