@@ -469,6 +469,7 @@ function App() {
                 constraints={plan.constraints}
                 viewMode={viewMode}
                 rackTypes={plan.rack_types}
+                currentWeekData={currentWeekData}
                 className="flex flex-col gap-3"
               />
             )}
