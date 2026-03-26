@@ -4,3 +4,7 @@
   font-family: 'MyFont';
   src: url('/fonts/QuickingRegular-gw5KY.otf') format('opentype');
 }
+
+.upload-btn:hover {
+  color: #9ca3af;
+}

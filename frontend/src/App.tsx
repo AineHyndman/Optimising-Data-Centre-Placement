@@ -256,8 +256,26 @@ function App() {
       {/* ── Header ── */}
       <div className="flex justify-between items-center mb-5">
         <h2 className="m-0 text-lg flex items-center gap-2.5">
-          <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
-          <span style={{ color: 'hsl(210 100% 56%)', fontFamily: 'MyFont', fontSize: '1.3rem' }} className="font-semibold">Data Centre Suite</span>
+          <button
+            onClick={() => {
+              setPlan(null);
+              setFileName('');
+              setPlannedMoves([]);
+              setScheduleResults(null);
+              setSimWeek(0);
+              setIsPlaying(false);
+              setHighlightedCells(null);
+              setError('');
+            }}
+            className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none p-0 hover:brightness-125 transition-all"
+          >
+            <img src="/meta.png" alt="Meta" className="h-6 w-auto" />
+            <span style={{ 
+              color: '#3B82F6',
+              fontFamily: 'MyFont',
+              fontSize: '1.5rem',
+            }} className="font-semibold">Data Centre Suite</span>
+          </button>
           {plan && (
             <span className="text-[#555] text-[13px] font-normal pl-3 ml-1 font-mono">
               <span className="text-[#aaa] font-semibold mr-2">{fileName}</span>
@@ -265,7 +283,6 @@ function App() {
             </span>
           )}
         </h2>
-
         <div className="flex gap-3 items-center">
           {plan && !isSimMode && (
             <select
@@ -540,7 +557,12 @@ function App() {
             </div>
           </div>
 
-          <label className="bg-[#4A90E2] hover:bg-[#357ABD] transition-colors text-white py-3 px-8 rounded-lg cursor-pointer font-bold text-sm">
+          <label className="upload-btn hover:bg-[#3B82F6]/10 transition-colors text-white py-3 px-8 rounded-lg cursor-pointer font-bold text-sm" style={{
+            backgroundColor: 'hsl(222 20% 8%)',
+            border: '1px solid #3B82F6aa',
+            boxShadow: '0 0 10px 2px #3B82F633, 0 0 20px 4px #2563eb22, inset 0 0 12px 1px #3B82F615',
+            transition: 'color 0.2s',
+          }}>
             Upload Cluster Plan
             <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
           </label>
