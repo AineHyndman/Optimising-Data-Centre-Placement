@@ -67,6 +67,13 @@ class SuiteState:
             if rack is not None:
                 row_power[pos.row] = row_power.get(pos.row, 0) + rack.powerNeed
         return sorted(self.positions.keys(), key=lambda pos: row_power.get(pos.row, 0))
+
+    def get_row_power(self, row: int) -> int:
+        return sum(
+            rack.powerNeed
+            for pos, rack in self.positions.items()
+            if pos.row == row and rack is not None
+        )
     
     # gets the sum of the total power in kilowatts
     def total_power_kw(self) -> int:
