@@ -34,7 +34,7 @@ export function parsePositionsToGrid(positions: Position[]): Grid {
 export function simPositionsToGrid(positions: GridPosition[]): Grid {
   const grid = createEmptyGrid();
   positions.forEach((pos) => {
-    const rowIdx = pos.row - 1;
+    const rowIdx = pos.row;
     const colIdx = pos.position - 1;
     if (rowIdx >= 0 && rowIdx < ROWS && colIdx >= 0 && colIdx < COLS) {
       grid[rowIdx][colIdx] = pos.rack_type ? pos.rack_type.toUpperCase() : null;

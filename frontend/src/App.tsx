@@ -141,7 +141,7 @@ function App() {
   const simChangedCells = useMemo(() => {
     if (!scheduleResults || simWeek === 0) return undefined;
     const changed: ChangedPosition[] = scheduleResults[simWeek - 1].changed_positions;
-    return new Set(changed.map(p => `${p.row - 1},${p.position - 1}`));
+    return new Set(changed.map(p => `${p.row},${p.position - 1}`));
   }, [scheduleResults, simWeek]);
 
   const modifiedSuite = useMemo(() => {
