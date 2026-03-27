@@ -176,9 +176,9 @@ class RackReplacer:
 
         return replace(state, positions=new_positions, racks=new_racks)
     
-"""
-Move rack, part of stage 2, moves racks from rows with higher power to ones with lower power, so energy is spread roughly evenly
-"""
+    """
+    Move rack, part of stage 2, moves racks from rows with higher power to ones with lower power, so energy is spread roughly evenly
+    """
     def move_rack(self, state: SuiteState, oldPos: Position, constraint: Constraints):
         if self.racks_changed >= self.max_moves_per_day:
             return state
