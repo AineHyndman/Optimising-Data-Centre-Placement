@@ -52,6 +52,7 @@ class RackReplacer:
         self.day += 1
         constraint = Constraints(state)
         stage = 1
+        # Moves to stage 2 after there are no more 2023 racks
         if state.get_2023_count() == 0:
             stage = 2
         return self.replace_multiple(state, constraint, stage, green)
@@ -175,7 +176,9 @@ class RackReplacer:
 
         return replace(state, positions=new_positions, racks=new_racks)
     
-
+"""
+Move rack, part of stage 2, moves racks from rows with higher power to ones with lower power, so energy is spread roughly evenly
+"""
     def move_rack(self, state: SuiteState, oldPos: Position, constraint: Constraints):
         if self.racks_changed >= self.max_moves_per_day:
             return state
@@ -194,6 +197,7 @@ class RackReplacer:
 
         i = 1
 
+        # Finds the first rack that is empty in the lowest power row
         while targetRackPos.row == targetRow:
             if (state.positions[targetRackPos].type == "Empty"):
                 break
@@ -309,6 +313,7 @@ class RackReplacer:
         NEW: Now uses ordered rows
         """
         if state.emergencyState.available_days() > 1 and not state.emergencyState.cooldown:
+            # Chooses path based on stage now
             if stage == 1:
                 for pos in state.get_ordered_rows():
                     if self.racks_changed >= self.max_moves_per_day:

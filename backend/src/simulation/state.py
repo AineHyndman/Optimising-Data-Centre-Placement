@@ -68,6 +68,7 @@ class SuiteState:
                 row_power[pos.row] = row_power.get(pos.row, 0) + rack.powerNeed
         return sorted(self.positions.keys(), key=lambda pos: row_power.get(pos.row, 0))
 
+    # Gets row power
     def get_row_power(self, row: int) -> int:
         return sum(
             rack.powerNeed
