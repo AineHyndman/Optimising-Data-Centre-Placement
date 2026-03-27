@@ -565,7 +565,7 @@ function App() {
             Upload Cluster Plan
             <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
           </label>
-          <p className="text-[#777] text-xs mt-3">Accepts .json files from the placement optimiser</p>
+          <p style={{fontFamily: 'MyFont'}} className="text-[#777] text-xs mt-3">Accepts .json files from the placement optimiser</p>
         </div>
       )}
 
