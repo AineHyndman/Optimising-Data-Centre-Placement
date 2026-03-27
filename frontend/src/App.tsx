@@ -554,7 +554,7 @@ function App() {
             </div>
           </div>
 
-          <label className="upload-btn hover:bg-[#3B82F6]/10 transition-colors text-white py-3 px-8 rounded-lg cursor-pointer font-bold text-sm" style={{
+          <label className="upload-btn hover:bg-[#3B82F6]/10 transition-colors text-white py-3 px-8 rounded-lg cursor-pointer text-sm" style={{
             backgroundColor: 'hsl(222 20% 8%)',
             border: '1px solid #3B82F6aa',
             boxShadow: '0 0 10px 2px #3B82F633, 0 0 20px 4px #2563eb22, inset 0 0 12px 1px #3B82F615',
