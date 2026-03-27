@@ -274,7 +274,7 @@ function App() {
               color: '#3B82F6',
               fontFamily: 'MyFont',
               fontSize: '1.5rem',
-            }} className="font-semibold">OptiData</span>
+            }} className="font-semibold">OptiSuite</span>
           </button>
           {plan && (
             <span className="text-[#555] text-[13px] font-normal pl-3 ml-1 font-mono">
@@ -524,7 +524,7 @@ function App() {
               fontFamily: 'MyFont', 
               textShadow: '0 0 2px #fff ,0 0 25px #3B82F6, 0 0 50px #3B82F6, 0 0 90px #3B82F6, 0 0 140px #2563eb', 
               fontSize: '2.5rem',
-              }} className="font-semibold">OptiData</span>
+              }} className="font-semibold">OptiSuite</span>
           </div>
           <p style={{fontFamily: 'MyFont'}} className="text-[#888] text-sm mb-10 max-w-[480px]">
             Visualise rack layouts, run weekly optimisation schedules, and track hardware upgrades across your data centre fleet.
