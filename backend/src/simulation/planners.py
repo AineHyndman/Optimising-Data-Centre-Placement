@@ -15,45 +15,45 @@ def choose_rack(old_rack: Rack, constraint: Constraints, rsu_per_service: dict):
     """
     new_rack = ""
     temp = get_rsu_ratio(constraint, rsu_per_service)
-    lowest = temp["c25"]
-    for key in temp.keys():
-        if temp[key] <= lowest:
-            lowest = temp[key]
-            new_rack = Rack(key)
-
+    lowest = sorted(temp, key=temp.get)
 
     """
-    Checks which type we are dealing with and makes sure no constraints are broken
-
-    If it reachest the max rsu for the service it just removes the 2023 Rack
-    This makes it possible to add more new racks
+    If one is full, it'll cycle through all of them to check if the whole capacity is full
     """
-    match new_rack.type:
-        case "Compute":
-            if new_rack.type == old_rack.type:
-                if rsu_per_service["Compute"] + new_rack.capacity - old_rack.capacity > constraint.compute_max:
-                    return(Rack(""))
-            else:
-                if rsu_per_service["Compute"] + new_rack.capacity > constraint.compute_max:
-                    return(Rack(""))
-        case "Storage":
-            if new_rack.type == old_rack.type:
-                if rsu_per_service["Storage"] + new_rack.capacity - old_rack.capacity > constraint.storage_max:
-                    return(Rack(""))
-            else:
-                if rsu_per_service["Storage"] + new_rack.capacity > constraint.storage_max:
-                    return(Rack(""))
+    for myKey in lowest:
+        new_rack = Rack(myKey)
 
-        case "AI":
-            if new_rack.type == old_rack.type:
-                if rsu_per_service["AI"] + new_rack.capacity - old_rack.capacity > constraint.AI_max:
-                    return(Rack(""))
-            else:
-                if rsu_per_service["AI"] + new_rack.capacity > constraint.AI_max:
-                    return(Rack(""))
+        """
+        Checks which type we are dealing with and makes sure no constraints are broken
 
+        If it reachest the max rsu for the service it just removes the 2023 Rack
+        This makes it possible to add more new racks
+        """
+        match new_rack.type:
+            case "Compute":
+                if new_rack.type == old_rack.type:
+                    if rsu_per_service["Compute"] + new_rack.capacity - old_rack.capacity > constraint.compute_max:
+                        continue
+                else:
+                    if rsu_per_service["Compute"] + new_rack.capacity > constraint.compute_max:
+                        continue
+            case "Storage":
+                if new_rack.type == old_rack.type:
+                    if rsu_per_service["Storage"] + new_rack.capacity - old_rack.capacity > constraint.storage_max:
+                        continue
+                else:
+                    if rsu_per_service["Storage"] + new_rack.capacity > constraint.storage_max:
+                        continue
+            case "AI":
+                if new_rack.type == old_rack.type:
+                    if rsu_per_service["AI"] + new_rack.capacity - old_rack.capacity > constraint.AI_max:
+                        continue
+                else:
+                    if rsu_per_service["AI"] + new_rack.capacity > constraint.AI_max:
+                        continue
+        return new_rack
     
-    return new_rack
+    return(Rack(""))
 
 
 """
@@ -96,4 +96,3 @@ def get_rsu_ratio(constraint: Constraints, rsu_per_service: dict):
     temp["s25"] = (rsu_per_service["Storage"] - constraint.storage_min) / (constraint.storage_max - constraint.storage_min)
     temp["a25"] = (rsu_per_service["AI"] - constraint.AI_min) / (constraint.AI_max - constraint.AI_min)
     return temp
-

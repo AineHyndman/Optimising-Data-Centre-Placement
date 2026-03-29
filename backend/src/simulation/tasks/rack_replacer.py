@@ -37,6 +37,9 @@ class RackReplacer:
         self.net_RSU_change = 0.0
         self.net_power_change = 0.0
 
+        self.finished = False
+        self.stage = 1
+
         self.rsu_per_service: dict
 
         """
@@ -53,13 +56,9 @@ class RackReplacer:
         # Added a day incrementer for the history
         self.day += 1
         constraint = Constraints(state)
-        stage = 1
-        # Moves to stage 2 after there are no more 2023 racks
-        if state.get_2023_count() == 0:
-            stage = 2
         # Making a dict for rsu per service instead of calling function each time
         self.rsu_per_service = state.get_rsu_per_service()
-        return self.replace_multiple(state, constraint, stage, green)
+        return self.replace_multiple(state, constraint, green)
 
     def is_valid_rack(self, rack: Optional[Rack]) -> bool:
         return rack is not None and rack.code in self.REPLACEMENT_MAP
@@ -74,7 +73,7 @@ class RackReplacer:
         elif rack is None or rack.generation != 2023:
             return state
         
-        # Uses new choose_rack function from planners.py
+        # Uses choose_rack function from planners.py
         if not green:
             new_rack = choose_rack(rack, constraint, self.rsu_per_service)
         else:
@@ -92,7 +91,7 @@ class RackReplacer:
             return state
         
 
-        if state.total_power_kw() + new_rack.powerNeed > constraint.allowed_power_kw():
+        if state.total_power_kw() + new_rack.powerNeed - rack.powerNeed > constraint.allowed_power_kw():
             return state
 
         new_code = new_rack.code
@@ -310,27 +309,34 @@ class RackReplacer:
         self.Storage_RSU_change = 0.0
         self.AI_RSU_change = 0.0
 
-    def replace_multiple(self, state: SuiteState, constraint: Constraints, stage: int, green: bool = False) -> SuiteState:
+    def replace_multiple(self, state: SuiteState, constraint: Constraints, green: bool = False) -> SuiteState:
         """
         Added a second version of the loop, one for regular and one for emergency power handling
 
-        NEW: Now uses ordered rows
+        Uses ordered rows
         """
-        if state.emergencyState.available_days() > 1 and not state.emergencyState.cooldown:
+
+        if self.finished == True:
+            pass
+        elif state.emergencyState.available_days() > 1 and not state.emergencyState.cooldown:
             # Chooses path based on stage now
-            if stage == 1:
-                for pos in state.get_ordered_rows():
+            if self.stage == 1:
+                for pos in state.positions.keys():
                     if self.racks_changed >= self.max_moves_per_day:
                         break
                     state = self.replace_rack(state, pos, constraint, green)
+                if self.racks_changed == 0:
+                    self.stage = 2
             else:
                 for pos in state.positions.keys():
                     if self.racks_changed >= self.max_moves_per_day:
                         break
                     state = self.move_rack(state, pos, constraint)
+                if self.racks_changed == 0:
+                    self.finished = True
 
         else:
-            for pos in state.get_ordered_rows():
+            for pos in state.positions.keys():
                 if self.racks_changed >= self.max_moves_per_day:
                     break
                 state = self.emergency_replace_rack(state, pos, constraint)
