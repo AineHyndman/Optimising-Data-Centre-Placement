@@ -37,6 +37,8 @@ class RackReplacer:
         self.net_RSU_change = 0.0
         self.net_power_change = 0.0
 
+        self.rsu_per_service: dict
+
         """
         Added RSU change for each type as well
         """
@@ -55,15 +57,14 @@ class RackReplacer:
         # Moves to stage 2 after there are no more 2023 racks
         if state.get_2023_count() == 0:
             stage = 2
+        # Making a dict for rsu per service instead of calling function each time
+        self.rsu_per_service = state.get_rsu_per_service()
         return self.replace_multiple(state, constraint, stage, green)
 
     def is_valid_rack(self, rack: Optional[Rack]) -> bool:
         return rack is not None and rack.code in self.REPLACEMENT_MAP
 
     def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints, green: bool = False):
-        
-        if self.racks_changed >= self.max_moves_per_day:
-            return state
 
         rack = state.positions[pos]
 
@@ -75,9 +76,9 @@ class RackReplacer:
         
         # Uses new choose_rack function from planners.py
         if not green:
-            new_rack = choose_rack(state, rack, constraint)
+            new_rack = choose_rack(rack, constraint, self.rsu_per_service)
         else:
-            new_rack = choose_rack_green(state, rack, constraint)
+            new_rack = choose_rack_green(rack, constraint, self.rsu_per_service)
 
         # If new_rack returned "", that means nothing changed, return state
         if new_rack == "":
@@ -106,18 +107,24 @@ class RackReplacer:
         match new_rack.type:
             case "Compute":
                 self.Compute_RSU_change += new_rack.capacity
+                self.rsu_per_service["Compute"] += new_rack.capacity
             case "Storage":
                 self.Storage_RSU_change += new_rack.capacity
+                self.rsu_per_service["Storage"] += new_rack.capacity
             case "AI":
                 self.AI_RSU_change += new_rack.capacity
+                self.rsu_per_service["AI"] += new_rack.capacity
         
         match old_rack.type:
             case "Compute":
                 self.Compute_RSU_change -= old_rack.capacity
+                self.rsu_per_service["Compute"] -= old_rack.capacity
             case "Storage":
                 self.Storage_RSU_change -= old_rack.capacity
+                self.rsu_per_service["Storage"] -= old_rack.capacity
             case "AI":
                 self.AI_RSU_change -= old_rack.capacity
+                self.rsu_per_service["AI"] -= old_rack.capacity
         
 
         self.racks_changed += 1
@@ -132,11 +139,8 @@ class RackReplacer:
     Rack replacer which prioritises removing racks to go under emergency threshold, mostly just a copy of the one above
     """
     def emergency_replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints):
-        if self.racks_changed >= self.max_moves_per_day:
-            return state
 
         rack = state.positions[pos]
-
 
         # Changed it so that it removes any rack
         if rack is None or rack.code == "":
@@ -147,20 +151,23 @@ class RackReplacer:
         
         new_rack = Rack("")
 
-
         match rack.type:
             case "Compute":
-                if state.get_rsu_per_service()["Compute"] - rack.capacity < constraint.compute_min:
+                if self.rsu_per_service["Compute"] - rack.capacity < constraint.compute_min:
                     return state
                 self.Compute_RSU_change -= rack.capacity
+                self.rsu_per_service["Compute"] -= rack.capacity
+
             case "Storage":
-                if state.get_rsu_per_service()["Storage"] - rack.capacity < constraint.storage_min:
+                if self.rsu_per_service["Storage"] - rack.capacity < constraint.storage_min:
                     return state
                 self.Storage_RSU_change -= rack.capacity
+                self.rsu_per_service["Storage"] -= rack.capacity
             case "AI":
-                if state.get_rsu_per_service()["AI"] - rack.capacity < constraint.AI_min:
+                if self.rsu_per_service["AI"] - rack.capacity < constraint.AI_min:
                     return state
                 self.AI_RSU_change -= rack.capacity
+                self.rsu_per_service["AI"] -= rack.capacity
 
         new_positions = dict(state.positions)
         new_racks = dict(state.racks)
@@ -180,8 +187,6 @@ class RackReplacer:
     Move rack, part of stage 2, moves racks from rows with higher power to ones with lower power, so energy is spread roughly evenly
     """
     def move_rack(self, state: SuiteState, oldPos: Position, constraint: Constraints):
-        if self.racks_changed >= self.max_moves_per_day:
-            return state
 
         rack = state.positions[oldPos]
 
@@ -248,7 +253,6 @@ class RackReplacer:
             active = True
         else:
             pass
-
 
         if active and not cooldown:
             emergency_days = 1 + emergency_days
