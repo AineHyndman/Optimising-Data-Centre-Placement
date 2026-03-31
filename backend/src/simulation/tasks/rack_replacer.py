@@ -64,6 +64,7 @@ class RackReplacer:
         return rack is not None and rack.code in self.REPLACEMENT_MAP
 
     def replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints, green: bool = False):
+        self.rsu_per_service = state.get_rsu_per_service().copy()
 
         rack = state.positions[pos]
 
@@ -138,6 +139,7 @@ class RackReplacer:
     Rack replacer which prioritises removing racks to go under emergency threshold, mostly just a copy of the one above
     """
     def emergency_replace_rack(self, state: SuiteState, pos: Position, constraint: Constraints):
+        self.rsu_per_service = state.get_rsu_per_service().copy()
 
         rack = state.positions[pos]
 
