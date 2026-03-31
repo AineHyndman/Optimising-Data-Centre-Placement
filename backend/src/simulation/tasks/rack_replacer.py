@@ -40,7 +40,7 @@ class RackReplacer:
         self.finished = False
         self.stage = 1
 
-        self.rsu_per_service: dict
+        self.rsu_per_service: dict = {}
 
         """
         Added RSU change for each type as well

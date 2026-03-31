@@ -166,28 +166,32 @@ def test_cool_days_increment_during_cooldown(initial_state):
 def test_choose_rack_returns_rack_instance(initial_state):
     constraint = Constraints(initial_state)
     old_rack = Rack("c23")
-    result = choose_rack(initial_state, old_rack, constraint)
+    rsu_per_service = initial_state.get_rsu_per_service()
+    result = choose_rack(old_rack, constraint, rsu_per_service)
     assert isinstance(result, Rack)
 
 
 def test_choose_rack_returns_valid_code(initial_state):
     constraint = Constraints(initial_state)
     old_rack = Rack("c23")
-    result = choose_rack(initial_state, old_rack, constraint)
+    rsu_per_service = initial_state.get_rsu_per_service()
+    result = choose_rack(old_rack, constraint, rsu_per_service)
     assert result.code in ("c25", "s25", "a25", "")
 
 
 def test_choose_rack_for_storage_returns_valid_code(initial_state):
     constraint = Constraints(initial_state)
     old_rack = Rack("s23")
-    result = choose_rack(initial_state, old_rack, constraint)
+    rsu_per_service = initial_state.get_rsu_per_service()
+    result = choose_rack(old_rack, constraint, rsu_per_service)
     assert result.code in ("c25", "s25", "a25", "")
 
 
 def test_choose_rack_for_ai_returns_valid_code(initial_state):
     constraint = Constraints(initial_state)
     old_rack = Rack("a23")
-    result = choose_rack(initial_state, old_rack, constraint)
+    rsu_per_service = initial_state.get_rsu_per_service()
+    result = choose_rack(old_rack, constraint, rsu_per_service)
     assert result.code in ("c25", "s25", "a25", "")
 
 
@@ -195,13 +199,15 @@ def test_choose_rack_for_ai_returns_valid_code(initial_state):
 
 def test_get_rsu_ratio_returns_all_three_services(initial_state):
     constraint = Constraints(initial_state)
-    ratios = get_rsu_ratio(initial_state, constraint)
+    rsu_per_service = initial_state.get_rsu_per_service()
+    ratios = get_rsu_ratio(constraint, rsu_per_service)
     assert set(ratios.keys()) == {"c25", "s25", "a25"}
 
 
 def test_get_rsu_ratio_values_are_floats(initial_state):
     constraint = Constraints(initial_state)
-    ratios = get_rsu_ratio(initial_state, constraint)
+    rsu_per_service = initial_state.get_rsu_per_service()
+    ratios = get_rsu_ratio(constraint, rsu_per_service)
     for v in ratios.values():
         assert isinstance(v, float)
 
