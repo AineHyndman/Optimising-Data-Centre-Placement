@@ -8,7 +8,7 @@ import { RackSelectorModal } from './RackSelectorModal';
 import { OptimizationModal } from './OptimizationModal';
 import { PlannedModifications } from './PlannedModifications';
 import { SimPanel } from './SimPanel';
-import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile, IcoDownload } from './icons';
+import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile, IcoDownload, IcoPlay, IconZap, IconCheckCircle, IconBrain } from './icons';
 
 const LOCAL_API  = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -20,6 +20,27 @@ async function getApiBase(): Promise<string> {
   } catch { /* localhost not available */ }
   return REMOTE_API;
 }
+
+// ── FAQ Item ────────────────────────────────────────────────────────────────
+const FaqItem: React.FC<{ question: string; answer: string }> = ({ question, answer }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-[#1e2028]">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex justify-between items-center py-4 text-left cursor-pointer bg-transparent border-none text-white"
+      >
+        <span style={{ fontFamily: 'MyFont' }} className="text-[14px]">{question}</span>
+        <span className={`text-[#555] text-lg transition-transform duration-200 ${open ? 'rotate-45' : ''}`}>+</span>
+      </button>
+      {open && (
+        <p className="text-[#888] text-[13px] pb-4 leading-relaxed mt-0" style={{ fontFamily: 'Inter' }}>
+          {answer}
+        </p>
+      )}
+    </div>
+  );
+};
 
 // ── App ──────────────────────────────────────────────────────────────────────
 function App() {
@@ -347,7 +368,13 @@ function App() {
                 {isSimulating ? <><IcoSpinner /> Running…</> : <><IcoLightning /> Run Optimization</>}
               </button>
             </>
-          ) : null}
+          ) : (
+            <label className="cursor-pointer py-2 px-3.5 rounded-md text-[13px] font-semibold border border-[#3B82F6]/50 text-[#3B82F6] hover:bg-[#3B82F6]/10 transition-colors flex items-center gap-2"
+              style={{ fontFamily: 'MyFont' }}>
+              <IcoAddFile /> Upload Plan
+              <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+            </label>
+          )}
         </div>
 
       </div>
