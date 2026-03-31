@@ -8,7 +8,7 @@ import { RackSelectorModal } from './RackSelectorModal';
 import { OptimizationModal } from './OptimizationModal';
 import { PlannedModifications } from './PlannedModifications';
 import { SimPanel } from './SimPanel';
-import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile, IcoDownload, IcoPlay, IconZap, IconCheckCircle, IconBrain } from './icons';
+import { IcoLightning, IcoSpinner, IcoPencil, IcoAddFile, IcoDownload } from './icons';
 
 const LOCAL_API  = 'http://localhost:8000';
 const REMOTE_API = 'https://backend-125308697189.europe-north1.run.app';
@@ -21,26 +21,7 @@ async function getApiBase(): Promise<string> {
   return REMOTE_API;
 }
 
-// ── FAQ Item ────────────────────────────────────────────────────────────────
-const FaqItem: React.FC<{ question: string; answer: string }> = ({ question, answer }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b border-[#1e2028]">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex justify-between items-center py-4 text-left cursor-pointer bg-transparent border-none text-white"
-      >
-        <span style={{ fontFamily: 'MyFont' }} className="text-[14px]">{question}</span>
-        <span className={`text-[#555] text-lg transition-transform duration-200 ${open ? 'rotate-45' : ''}`}>+</span>
-      </button>
-      {open && (
-        <p className="text-[#888] text-[13px] pb-4 leading-relaxed mt-0" style={{ fontFamily: 'Inter' }}>
-          {answer}
-        </p>
-      )}
-    </div>
-  );
-};
+
 
 // ── App ──────────────────────────────────────────────────────────────────────
 function App() {
