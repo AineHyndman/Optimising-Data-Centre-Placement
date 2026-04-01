@@ -110,10 +110,21 @@ export const SimPanel: React.FC<SimPanelProps> = ({
           background: `linear-gradient(to right, hsl(210 100% 56%) 0%, hsl(210 100% 56%) ${sliderPct}%, hsl(222 15% 20%) ${sliderPct}%, hsl(222 15% 20%) 100%)`,
         }}
       />
-      <div className="flex justify-between px-0.5 mb-5">
-        {Array.from({ length: totalWeeks + 1 }, (_, i) => (
-          <span key={i} className="text-[10px] text-[#444] font-mono">{i}</span>
-        ))}
+      <div className="relative h-4 mb-5">
+        {(() => {
+          const step = totalWeeks <= 12 ? 1 : totalWeeks <= 26 ? 5 : 10;
+          const ticks = Array.from({ length: totalWeeks + 1 }, (_, i) => i)
+            .filter(i => i === 0 || i === totalWeeks || i % step === 0);
+          return ticks.map(i => (
+            <span
+              key={i}
+              className="absolute text-[10px] text-[#555] font-mono -translate-x-1/2"
+              style={{ left: `${(i / totalWeeks) * 100}%` }}
+            >
+              {i}
+            </span>
+          ));
+        })()}
       </div>
 
       <div className="flex items-center justify-center gap-3">
