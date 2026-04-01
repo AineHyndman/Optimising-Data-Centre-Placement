@@ -87,18 +87,19 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({ suite, constraints,
 
   // Power by row
   const powerByRow = useMemo(() => {
-    const rackPowerMap = new Map(rackTypes.map(r => [r.name, r.power_need]));
+    const rackPowerMap = new Map(rackTypes.map(r => [r.name.toUpperCase(), r.power_need])); // ← uppercase keys
     const rowMap = new Map<number, number>();
-    suite.positions.forEach(pos => {
+    const positions = currentWeekData?.grid_positions ?? suite.positions;
+    positions.forEach(pos => {
       if (!pos.rack_type) return;
       const row = parseInt(String(pos.row), 10);
-      const power = rackPowerMap.get(pos.rack_type) ?? 0;
+      const power = rackPowerMap.get(pos.rack_type.toUpperCase()) ?? 0; // ← uppercase lookup
       rowMap.set(row, (rowMap.get(row) ?? 0) + power);
     });
     return Array.from(rowMap.entries())
       .filter(([, p]) => p > 0)
       .sort(([a], [b]) => a - b);
-  }, [suite, rackTypes]);
+  }, [suite, rackTypes, currentWeekData]);
 
   const maxRowPower = useMemo(() => Math.max(...powerByRow.map(([, p]) => p), 1), [powerByRow]);
 
